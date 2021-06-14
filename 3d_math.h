@@ -17,11 +17,20 @@
 
 IDEAS
 
-
 */
-
 #define PI        3.1415926535897932384626433f
 #define MAX(x, y) x > y ? x : y
+
+#ifdef SDL_h_
+typedef SDL_Rect Rect;
+#else
+typedef struct Rect {
+    i32 x;
+    i32 y;
+    i32 w;
+    i32 h;
+} Rect;
+#endif
 
 typedef struct Vec2f {
     alignas(4) f32 x;

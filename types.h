@@ -18,22 +18,4 @@ typedef int64_t i64;
 typedef int32_t i32;
 typedef float f32;
 
-#ifdef SDL_h_
-typedef SDL_Rect Rect;
-#else
-typedef struct Rect {
-    i32 x;
-    i32 y;
-    i32 w;
-    i32 h;
-} Rect;
-#endif
-
-typedef struct frect {
-    f32 x;
-    f32 y;
-    f32 w;
-    f32 h;
-} frect;
-
 #endif // COMMON_H
