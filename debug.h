@@ -46,7 +46,7 @@ internal void add_memory_info(void *ptr, size_t size, char *filename,
 
     leak->info.ptr = ptr;
     leak->info.size = size;
-    leak->info.file = filename + 26;
+    leak->info.file = filename;
     leak->info.line = line;
     leak->next = NULL;
 
