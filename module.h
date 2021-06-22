@@ -55,7 +55,7 @@ internal bool Win32ShouldReloadModule(Module *module) {
     return false;
 }
 
-internal void Win32LoadModule(Module *module, const char *name) {
+internal bool Win32LoadModule(Module *module, const char *name) {
     SDL_Log("Loading module %s", name);
 
     u32 name_length = strlen(name);
@@ -73,27 +73,46 @@ internal void Win32LoadModule(Module *module, const char *name) {
     strcat(orig_dll, path);
     strcat(orig_dll, name);
     strcat(orig_dll, ".dll");
+
     module->tmp_dll = (char *)calloc(
         path_length + name_length + strlen("_temp.dll") + 1, sizeof(char));
     strcat(module->tmp_dll, path);
     strcat(module->tmp_dll, name);
     strcat(module->tmp_dll, "_temp.dll");
-    CopyFile(orig_dll, module->tmp_dll, FALSE);
+
+    // Copy the .dll to the new _temp.dll to allow writing by the compiler, only
+    // if it exists. CopyFile deletes the destination even on failure, so do the
+    // copy only if the file exists. This will reload the previous _tmp
+    WIN32_FIND_DATA f;
+    HANDLE hdl = FindFirstFile(orig_dll, &f);
+    if (hdl != INVALID_HANDLE_VALUE) {
+        FindClose(hdl);
+        DeleteFile(module->tmp_dll);
+        if (!CopyFile(orig_dll, module->tmp_dll, FALSE)) {
+            DWORD dw = GetLastError();
+            SDL_LogError(0, "Error copying module %s, %d", name, dw);
+        }
+    } else {
+        SDL_LogWarn(0, "%s.dll doesn't exist, reloading the previous module.",
+                    name);
+    }
+
     module->dll = LoadLibrary(module->tmp_dll);
 
     if (!module->dll) {
         SDL_LogError(0, "Unable to load module %s", name);
+        return false;
     }
 
     free(orig_dll);
     module->last_write_time = Win32GetLastWriteTime(module->meta_path);
 
     SDL_Log("Module loaded : %s", name);
+    return true;
 }
 
 internal void Win32CloseModule(Module *module) {
     FreeLibrary(module->dll);
-    DeleteFile(module->tmp_dll);
     free(module->tmp_dll);
     free(module->meta_path);
 }
