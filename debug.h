@@ -8,17 +8,24 @@
 
 #define ASSERT(expression)                                                     \
     if (!(expression)) {                                                       \
-        while (1)                                                              \
-                                                                               \
-            *(int *)0 = 0;                                                     \
+        *(int *)0 = 0;                                                         \
     }
 #define ASSERT_MSG(expression, msg)                                            \
     if (!(expression)) {                                                       \
         SDL_LogError(0, msg);                                                  \
-        while (1)                                                              \
-            ;                                                                  \
         *(int *)0 = 0;                                                         \
     }
+
+#define HANG(expression)                                                       \
+    if (!(expression))                                                         \
+        while (1)                                                              \
+            ;
+
+#define HANG_MSG(expression, msg)                                              \
+    if (!(expression))                                                         \
+        SDL_LogError(0, msg);                                                  \
+    while (1)                                                                  \
+        ;
 
 global bool DBG_keep_console_open = false;
 #define KEEP_CONSOLE_OPEN(value) DBG_keep_console_open |= value
@@ -163,6 +170,9 @@ void PerformEndChecks() {
 #else // #if DEBUG
 
 #define ASSERT(expression)
+#define ASSERT(expression, msg)
+#define HANG(expression)
+#define HANG_MSG(expression, msg)
 #define KEEP_CONSOLE_OPEN(value)
 #define DBG_END()
 
