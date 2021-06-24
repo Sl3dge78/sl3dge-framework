@@ -296,10 +296,16 @@ Mat4 mat4_ortho_zoom(float ratio, float zoom, float n, float f) {
     return result;
 }
 
-void mat4_translate(Mat4 *mat, const Vec3 vec) {
+inline void mat4_translate(Mat4 *mat, const Vec3 vec) {
     mat->m[3][0] += vec.x;
     mat->m[3][1] += vec.y;
     mat->m[3][2] += vec.z;
+}
+
+inline void mat4_set_position(Mat4 *mat, const Vec3 vec) {
+    mat->m[3][0] = vec.x;
+    mat->m[3][1] = vec.y;
+    mat->m[3][2] = vec.z;
 }
 
 void mat4_rotate_x(Mat4 *mat, const float radians) {
