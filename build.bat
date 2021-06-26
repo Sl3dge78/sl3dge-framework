@@ -1,29 +1,33 @@
 @echo off
 setlocal enabledelayedexpansion
 
-rem Sample of a build file
+REM Sample of a build file
 
-set args= -GR- -EHa -nologo -Zi -experimental:external -external:anglebrackets -DDEBUG -Fotmp/ -Fdtmp/
-set include_path=-external:I D:\Guigui\Work\Prog\_include\ -external:I %VULKAN_SDK%\include
+CLS
 
-set linker_options=-link -SUBSYSTEM:WINDOWS -LIBPATH:D:\Guigui\Work\Prog\_lib -LIBPATH:%VULKAN_SDK%\lib -incremental:no
-set libs=SDL2main.lib SDL2.lib SDL2_image.lib Shell32.lib vulkan-1.lib
+SET timestamp=%TIME:~3,2%%TIME:~6,2%
+SET args=-g -DDEBUG
+SET include_path=-I D:\Guigui\Work\Prog\_include\ -I %VULKAN_SDK%\include
 
-pushd tmp
-del *.pdb > NUL 2> NUL
-popd
+SET linker_options=-L D:\Guigui\Work\Prog\_lib -L %VULKAN_SDK%\lib -Xlinker -incremental:no
+SET libs=-lSDL2main.lib -lSDL2.lib -lSDL2_image.lib -lShell32.lib -lvulkan-1.lib
 
-rem Build the main .exe here
-cl %args% -Fewin32 %include_path% %vulkan_include_path% src/win32.cpp %linker_options% -PDB:tmp/ -OUT:bin/win32.exe %libs%
+REM Clear the temporary directory and create it if it doesn't exist
+DEL /Q tmp > NUL 2> NUL
+MKDIR tmp > NUL 2> NUL
 
-rem build each module here
-rem it's looking for a file named with the same name as the module in src/
-rem Will create a dll and a .meta file once build is complete
-for %%G in (module1,module2) do (
-    set timestamp=%TIME:~3,2%%TIME:~6,2%
-    cl %args% -Fe%%G %include_path% %vulkan_include_path% -LD src/%%G.cpp %linker_options% -PDB:tmp/%%G_%timestamp%.pdb -IMPLIB:tmp/%%G.lib -OUT:bin/%%G.dll %libs%
+REM Build the main .exe here
+ECHO win32.cpp
+clang %args% %include_path% src/win32.cpp -o bin/win32.exe %linker_options% %libs% -Xlinker -SUBSYSTEM:WINDOWS -Xlinker -PDB:tmp/win32.pdb
+
+REM build each module here
+REM it's looking for a file named with the same name as the module in src/
+REM Will create a dll and a .meta file once build is complete
+FOR %%G IN (module1,module2) DO (
+    SET timestamp=%TIME:~3,2%%TIME:~6,2%
+    ECHO %%G
+    clang %args% %include_path% -shared src/%%G.cpp -o bin/%%G.dll %linker_options% %libs% -Xlinker -PDB:tmp/%%G_%timestamp%.pdb -Xlinker -IMPLIB:tmp/%%G.lib
     if !ERRORLEVEL! == 0 ( echo a > bin/%%G.meta )
-
 )
 
 echo Done.
