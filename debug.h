@@ -78,7 +78,7 @@ internal void delete_memory_info(void *ptr) {
     for(MemoryLeak *leak = array_start; leak != NULL; leak = leak->next) {
         MemoryLeak *next_leak = leak->next;
         if(next_leak == NULL) {
-            printf("Attemptig to free a nullptr!");
+            printf("Attempting to free a nullptr!");
             ASSERT(0);
             return;
         }

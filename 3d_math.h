@@ -18,7 +18,7 @@
 IDEAS
 
 */
-#define PI        3.1415926535897932384626433f
+#define PI 3.1415926535897932384626433f
 #define MAX(x, y) x > y ? x : y
 
 #ifdef SDL_h_
@@ -68,7 +68,9 @@ u32 aligned_size(const u32 value, const u32 alignment) {
     return (value + alignment - 1) & ~(alignment - 1);
 }
 
-inline float radians(const float angle) { return angle / 180.f * PI; }
+inline float radians(const float angle) {
+    return angle / 180.f * PI;
+}
 
 // =====================================================
 
@@ -96,14 +98,15 @@ Vec2f operator*(Vec2f l, f32 r) {
     return l;
 }
 
-inline void vec2f_print(const Vec2f v) { SDL_Log("%f, %f", v.x, v.y); }
+inline void vec2f_print(const Vec2f v) {
+    SDL_Log("%f, %f", v.x, v.y);
+}
 
 inline float vec2f_length(const Vec2f v) {
     return sqrt((v.x * v.x) + (v.y * v.y));
 }
 
 void vec2f_normalize(Vec2f *v) {
-
     const f32 length = vec2f_length(*v);
 
     v->x /= length;
@@ -116,14 +119,12 @@ inline f32 vec2f_distance(const Vec2f a, const Vec2f b) {
 }
 
 inline bool vec2f_in_circle(const Vec2f v, const Vec2f center, f32 radius) {
-
-    return v.x > center.x - radius && v.x < center.x + radius &&
-           v.y > center.y - radius && v.y < center.y + radius;
+    return v.x > center.x - radius && v.x < center.x + radius && v.y > center.y - radius &&
+           v.y < center.y + radius;
 }
 
 inline bool vec2f_in_rect(const Vec2f v, const Rect rect) {
-    return (v.x > rect.x && v.y > rect.y && v.x < rect.w + rect.x &&
-            v.y < rect.h + rect.y);
+    return (v.x > rect.x && v.y > rect.y && v.x < rect.w + rect.x && v.y < rect.h + rect.y);
 }
 
 // =====================================================
@@ -202,17 +203,30 @@ float vec3_dot(const Vec3 a, const Vec3 b) {
 void mat4_print(const Mat4 *mat) {
     SDL_Log("\n%#.3f, %#.3f, %#.3f, %#.3f\n%#.3f, %#.3f, %#.3f, %#.3f\n%#.3f, "
             "%#.3f, %#.3f, %#.3f\n%#.3f, %#.3f, %#.3f, %#.3f",
-            mat->v[0], mat->v[1], mat->v[2], mat->v[3], mat->v[4], mat->v[5],
-            mat->v[6], mat->v[7], mat->v[8], mat->v[9], mat->v[10], mat->v[11],
-            mat->v[12], mat->v[13], mat->v[14], mat->v[15]);
+            mat->v[0],
+            mat->v[1],
+            mat->v[2],
+            mat->v[3],
+            mat->v[4],
+            mat->v[5],
+            mat->v[6],
+            mat->v[7],
+            mat->v[8],
+            mat->v[9],
+            mat->v[10],
+            mat->v[11],
+            mat->v[12],
+            mat->v[13],
+            mat->v[14],
+            mat->v[15]);
 }
 
 Mat4 mat4_mul(const Mat4 *a, const Mat4 *b) {
     Mat4 result = {};
 
-    for (u32 i = 0; i < 4; i++) {
-        for (u32 j = 0; j < 4; j++) {
-            for (u32 k = 0; k < 4; k++) {
+    for(u32 i = 0; i < 4; i++) {
+        for(u32 j = 0; j < 4; j++) {
+            for(u32 k = 0; k < 4; k++) {
                 result.m[j][i] += (a->m[k][i] * b->m[j][k]);
             }
         }
@@ -224,8 +238,22 @@ Mat4 mat4_mul(const Mat4 *a, const Mat4 *b) {
 const Mat4 mat4_identity() {
     Mat4 result;
 
-    result = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-              0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    result = {1.0f,
+              0.0f,
+              0.0f,
+              0.0f,
+              0.0f,
+              1.0f,
+              0.0f,
+              0.0f,
+              0.0f,
+              0.0f,
+              1.0f,
+              0.0f,
+              0.0f,
+              0.0f,
+              0.0f,
+              1.0f};
 
     return result;
 }
@@ -233,19 +261,21 @@ const Mat4 mat4_identity() {
 void mat4_transpose(Mat4 *mat) {
     Mat4 tmp = {};
 
-    for (u32 c = 0; c < 4; c++) {
-        for (u32 r = 0; r < 4; r++) {
+    for(u32 c = 0; c < 4; c++) {
+        for(u32 r = 0; r < 4; r++) {
             tmp.v[c * 4 + r] = mat->v[r * 4 + c];
         }
     }
 
-    for (u32 i = 0; i < 16; i++) {
+    for(u32 i = 0; i < 16; i++) {
         mat->v[i] = tmp.v[i];
     }
 }
 
-Mat4 mat4_perspective(const float fov, const float aspect_ratio,
-                      const float near_, const float far_) {
+Mat4 mat4_perspective(const float fov,
+                      const float aspect_ratio,
+                      const float near_,
+                      const float far_) {
     Mat4 result = {};
 
     const float tan_theta_2 = tan(radians(fov) * 0.5f);
@@ -260,8 +290,12 @@ Mat4 mat4_perspective(const float fov, const float aspect_ratio,
     return result;
 }
 
-Mat4 mat4_ortho(const float t, const float b, const float l, const float r,
-                const float n, const float f) {
+Mat4 mat4_ortho(const float t,
+                const float b,
+                const float l,
+                const float r,
+                const float n,
+                const float f) {
     Mat4 result = {};
 
     result.m[0][0] = 2.0f / (r - l);
@@ -496,17 +530,16 @@ void mat4_inverse(const Mat4 *m, Mat4 *out) {
                 m->v[4] * m->v[1] * m->v[10] + m->v[4] * m->v[2] * m->v[9] +
                 m->v[8] * m->v[1] * m->v[6] - m->v[8] * m->v[2] * m->v[5];
 
-    det = m->v[0] * inv.v[0] + m->v[1] * inv.v[4] + m->v[2] * inv.v[8] +
-          m->v[3] * inv.v[12];
+    det = m->v[0] * inv.v[0] + m->v[1] * inv.v[4] + m->v[2] * inv.v[8] + m->v[3] * inv.v[12];
 
-    if (det == 0) {
+    if(det == 0) {
         SDL_Log("Inverse of matrix doesn't exist");
         return;
     }
 
     det = 1.0 / det;
 
-    for (i = 0; i < 16; i++)
+    for(i = 0; i < 16; i++)
         out->v[i] = inv.v[i] * det;
 }
 
