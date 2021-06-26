@@ -32,7 +32,7 @@ typedef struct Module {
     char *tmp_dll;
 } Module;
 
-internal inline FILETIME Win32GetLastWriteTime(char *file_name) {
+internal inline FILETIME Win32GetLastWriteTime(const char *file_name) {
     FILETIME last_write_time = {};
 
     WIN32_FIND_DATA data;
@@ -62,23 +62,23 @@ internal bool Win32LoadModule(Module *module, const char *name) {
     const char *path = "bin\\";
     const u32 path_length = strlen(path);
 
-    module->meta_path = (char *)calloc(
-        path_length + name_length + strlen(".meta") + 1, sizeof(char));
-    strcat(module->meta_path, path);
-    strcat(module->meta_path, name);
-    strcat(module->meta_path, ".meta");
+    u32 meta_length = path_length + name_length + strlen(".meta") + 1;
+    module->meta_path = (char *)calloc(meta_length, sizeof(char));
+    strcat_s(module->meta_path, meta_length, path);
+    strcat_s(module->meta_path, meta_length, name);
+    strcat_s(module->meta_path, meta_length, ".meta");
 
-    char *orig_dll = (char *)calloc(
-        path_length + name_length + strlen(".dll") + 1, sizeof(char));
-    strcat(orig_dll, path);
-    strcat(orig_dll, name);
-    strcat(orig_dll, ".dll");
+    u32 orig_length = path_length + name_length + strlen(".dll") + 1;
+    char *orig_dll = (char *)calloc(orig_length, sizeof(char));
+    strcat_s(orig_dll, orig_length, path);
+    strcat_s(orig_dll, orig_length, name);
+    strcat_s(orig_dll, orig_length, ".dll");
 
-    module->tmp_dll = (char *)calloc(
-        path_length + name_length + strlen("_temp.dll") + 1, sizeof(char));
-    strcat(module->tmp_dll, path);
-    strcat(module->tmp_dll, name);
-    strcat(module->tmp_dll, "_temp.dll");
+    u32 temp_length = path_length + name_length + strlen("_temp.dll") + 1;
+    module->tmp_dll = (char *)calloc(temp_length, sizeof(char));
+    strcat_s(module->tmp_dll, temp_length, path);
+    strcat_s(module->tmp_dll, temp_length, name);
+    strcat_s(module->tmp_dll, temp_length, "_temp.dll");
 
     // Copy the .dll to the new _temp.dll to allow writing by the compiler, only
     // if it exists. CopyFile deletes the destination even on failure, so do the

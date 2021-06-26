@@ -8,12 +8,12 @@
 
 #define ASSERT(expression)                                                     \
     if (!(expression)) {                                                       \
-        *(int *)0 = 0;                                                         \
+        __builtin_trap();                                                      \
     }
 #define ASSERT_MSG(expression, msg)                                            \
     if (!(expression)) {                                                       \
         SDL_LogError(0, msg);                                                  \
-        *(int *)0 = 0;                                                         \
+        __builtin_trap();                                                      \
     }
 
 #define HANG(expression)                                                       \
@@ -27,7 +27,8 @@
     while (1)                                                                  \
         ;
 
-global bool DBG_keep_console_open = false;
+global bool DBG_keep_console_open;
+
 #define KEEP_CONSOLE_OPEN(value) DBG_keep_console_open |= value
 
 #define DBG_END() PerformEndChecks()
@@ -35,7 +36,7 @@ global bool DBG_keep_console_open = false;
 typedef struct MemoryInfo {
     void *ptr;
     size_t size;
-    char *file;
+    const char *file;
     u32 line;
 } MemoryInfo;
 
@@ -47,7 +48,7 @@ typedef struct MemoryLeak {
 global MemoryLeak *array_start = NULL;
 global MemoryLeak *array_end = NULL;
 
-internal void add_memory_info(void *ptr, size_t size, char *filename,
+internal void add_memory_info(void *ptr, size_t size, const char *filename,
                               u32 line) {
     MemoryLeak *leak = (MemoryLeak *)malloc(sizeof(MemoryLeak));
 
@@ -106,7 +107,7 @@ internal void clear_array() {
     }
 }
 
-void *DBG_malloc(size_t size, char *filename, u32 line) {
+void *DBG_malloc(size_t size, const char *filename, u32 line) {
     void *ptr = malloc(size);
     if (ptr != NULL) {
         add_memory_info(ptr, size, filename, line);
@@ -114,7 +115,7 @@ void *DBG_malloc(size_t size, char *filename, u32 line) {
     return ptr;
 }
 
-void *DBG_calloc(size_t num, size_t size, char *filename, u32 line) {
+void *DBG_calloc(size_t num, size_t size, const char *filename, u32 line) {
     void *ptr = calloc(num, size);
     if (ptr != NULL) {
         add_memory_info(ptr, num * size, filename, line);
@@ -122,7 +123,7 @@ void *DBG_calloc(size_t num, size_t size, char *filename, u32 line) {
     return ptr;
 }
 
-void *DBG_realloc(void *ptr, size_t new_size, char *filename, u32 line) {
+void *DBG_realloc(void *ptr, size_t new_size, const char *filename, u32 line) {
     void *new_ptr = realloc(ptr, new_size);
     if (new_ptr != NULL) {
         if (ptr != NULL)
