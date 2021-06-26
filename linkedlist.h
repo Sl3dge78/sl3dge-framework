@@ -5,54 +5,47 @@
 
 #define ARRAY_INIT_SIZE 10
 
-// TODO : Test
-struct Vector {
-    void **buffer;
+struct u32Vector {
+    u32 *buffer;
     u32 count;
     u32 capacity;
 };
 
-
-void array_init(Vector *v, u32 init_size) {
-    v->buffer = (void **)malloc(sizeof(void*) * init_size);
+void u32vector_init(u32Vector *v, u32 init_size) {
+    v->buffer = (u32 *)malloc(sizeof(u32) * init_size);
     v->count = 0;
     v->capacity = init_size;
 }
 
-u32 array_count(Vector *v) {
+u32 u32vector_count(u32Vector *v) {
     return v->count;
 }
 
-void array_destroy(Vector *v) {
+void u32vector_destroy(u32Vector *v) {
     free(v->buffer);
     v->count = 0;
     v->capacity = 0;
 }
 
-void array_resize(Vector *v, u32 new_capacity) {
-    void **new_buffer = (void**)realloc(v->buffer, new_capacity * sizeof(void*));
+internal void u32vector_resize(u32Vector *v, u32 new_capacity) {
+    u32 *new_buffer = (u32 *)realloc(v->buffer, new_capacity * sizeof(void *));
     if(new_buffer) {
         v->buffer = new_buffer;
         v->capacity = new_capacity;
     }
 }
 
-void array_add(Vector *v, void *item) {
+void u32vector_append(u32Vector *v, u32 item) {
     if(v->capacity == v->count) {
-        array_resize(v, v->capacity * 2);
+        u32vector_resize(v, v->capacity * 2);
     }
     v->buffer[v->count] = item;
+    v->count++;
 }
-
-void *array_get(Vector *v, u32 index){
-    if(index >= 0 && index < v->count){
-        return v->buffer[index];
-    }
-    return NULL;
-}
-
 
 // TODO : Test
+struct ListItem;
+
 struct List {
     ListItem *head;
     ListItem *end;
@@ -75,7 +68,7 @@ void llpushback(List *ll, void *object, size_t size) {
     //item->data = malloc(size);
     //memcpy(ll->head, object, size);
     item->data = object;
-    if(ll->end){
+    if(ll->end) {
         item->prev = ll->end;
     }
 
@@ -92,7 +85,7 @@ void llpopback(List *ll) {
     if(ll->head) {
         ListItem *last = ll->end->prev;
         lldeleteitem(ll->end);
-        
+
         ll->size--;
         if(last) {
             ll->end = last;
@@ -107,12 +100,11 @@ void llpopfront(List *ll) {
         ll->size--;
         if(first) {
             ll->head = first;
-        
         }
     }
 }
 
-void llclear(List *ll){
+void llclear(List *ll) {
     ListItem *i = ll->head;
     while(i != NULL) {
         ListItem *n = i->next;
