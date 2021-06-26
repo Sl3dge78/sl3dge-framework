@@ -8,8 +8,8 @@
 
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 
-#define internal static;
-#define global   static;
+#define internal static
+#define global   static
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
