@@ -395,7 +395,7 @@ void mat4_rotate_euler(Mat4 *mat, const Vec3 euler) {
     mat->m[2][2] = cx * cy;
 }
 
-Mat4 mat4_look_at(Vec3 target, Vec3 eye, Vec3 up) {
+Mat4 mat4_look_at(const Vec3 target, const Vec3 eye, const Vec3 up) {
     Vec3 z_axis = vec3_normalize(eye - target);
     Vec3 x_axis = vec3_normalize(vec3_cross(up, z_axis));
     Vec3 y_axis = vec3_cross(z_axis, x_axis);
