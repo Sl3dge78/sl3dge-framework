@@ -28,7 +28,7 @@ void u32vector_destroy(u32Vector *v) {
 }
 
 internal void u32vector_resize(u32Vector *v, u32 new_capacity) {
-    u32 *new_buffer = (u32 *)realloc(v->buffer, new_capacity * sizeof(void *));
+    u32 *new_buffer = (u32 *)srealloc(v->buffer, new_capacity * sizeof(void *));
     if(new_buffer) {
         v->buffer = new_buffer;
         v->capacity = new_capacity;
