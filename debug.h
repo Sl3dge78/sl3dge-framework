@@ -67,6 +67,8 @@ internal void add_memory_info(void *ptr, size_t size, const char *filename, u32 
 }
 
 internal void delete_memory_info(void *ptr) {
+    ASSERT_MSG(array_start, "Attempting to free a nullptr!");
+
     if(array_start->info.ptr == ptr) {
         MemoryLeak *leak = array_start;
         array_start = array_start->next;
@@ -77,11 +79,8 @@ internal void delete_memory_info(void *ptr) {
 
     for(MemoryLeak *leak = array_start; leak != NULL; leak = leak->next) {
         MemoryLeak *next_leak = leak->next;
-        if(next_leak == NULL) {
-            printf("Attempting to free a nullptr!");
-            ASSERT(0);
-            return;
-        }
+        ASSERT_MSG(next_leak, "Attempting to free a nullptr!");
+
         if(next_leak->info.ptr == ptr) { // Si il faut supprimer le suivant
             if(array_end == next_leak) {
                 leak->next = NULL;
@@ -162,10 +161,10 @@ void PerformEndChecks() {
     }
 }
 
-#define malloc(size) DBG_malloc(size, __FILE__, __LINE__)
-#define calloc(num, size) DBG_calloc(num, size, __FILE__, __LINE__)
-#define realloc(ptr, size) DBG_realloc(ptr, size, __FILE__, __LINE__)
-#define free(ptr) DBG_free(ptr)
+#define smalloc(size) DBG_malloc(size, __FILE__, __LINE__)
+#define scalloc(num, size) DBG_calloc(num, size, __FILE__, __LINE__)
+#define srealloc(ptr, size) DBG_realloc(ptr, size, __FILE__, __LINE__)
+#define sfree(ptr) DBG_free(ptr)
 
 #else // #if DEBUG
 
@@ -175,6 +174,11 @@ void PerformEndChecks() {
 #define HANG_MSG(expression, msg)
 #define KEEP_CONSOLE_OPEN(value)
 #define DBG_END()
+
+#define smalloc(size) malloc(size)
+#define scalloc(num, size) calloc(num, size)
+#define srealloc(ptr, size) realloc(ptr, size)
+#define sfree(ptr) free(ptr)
 
 #endif // #if DEBUG
 

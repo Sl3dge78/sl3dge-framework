@@ -12,7 +12,7 @@ struct u32Vector {
 };
 
 void u32vector_init(u32Vector *v, u32 init_size) {
-    v->buffer = (u32 *)malloc(sizeof(u32) * init_size);
+    v->buffer = (u32 *)smalloc(sizeof(u32) * init_size);
     v->count = 0;
     v->capacity = init_size;
 }
@@ -22,7 +22,7 @@ u32 u32vector_count(u32Vector *v) {
 }
 
 void u32vector_destroy(u32Vector *v) {
-    free(v->buffer);
+    sfree(v->buffer);
     v->count = 0;
     v->capacity = 0;
 }
@@ -60,11 +60,11 @@ struct ListItem {
 
 internal void lldeleteitem(ListItem *item) {
     //free(item->data);
-    free(item);
+    sfree(item);
 }
 
 void llpushback(List *ll, void *object, size_t size) {
-    ListItem *item = (ListItem *)malloc(sizeof(ListItem));
+    ListItem *item = (ListItem *)smalloc(sizeof(ListItem));
     //item->data = malloc(size);
     //memcpy(ll->head, object, size);
     item->data = object;
