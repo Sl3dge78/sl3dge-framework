@@ -62,23 +62,20 @@ internal bool Win32LoadModule(Module *module, const char *name) {
     const char *path = "bin\\";
     const u32 path_length = strlen(path);
 
-    u32 meta_length = path_length + name_length + strlen(".meta") + 1;
+    strcpy_s(module->meta_path, "");
     strcat_s(module->meta_path, path);
     strcat_s(module->meta_path, name);
     strcat_s(module->meta_path, ".meta");
-
-    u32 orig_length = path_length + name_length + strlen(".dll") + 1;
 
     char orig_dll[64] = {};
     strcat_s(orig_dll, path);
     strcat_s(orig_dll, name);
     strcat_s(orig_dll, ".dll");
 
-    u32 temp_length = path_length + name_length + strlen("_temp.dll") + 1;
-
-    strcat_s(module->tmp_dll, temp_length, path);
-    strcat_s(module->tmp_dll, temp_length, name);
-    strcat_s(module->tmp_dll, temp_length, "_temp.dll");
+    strcpy_s(module->tmp_dll, "");
+    strcat_s(module->tmp_dll, path);
+    strcat_s(module->tmp_dll, name);
+    strcat_s(module->tmp_dll, "_temp.dll");
 
     // Copy the .dll to the new _temp.dll to allow writing by the compiler, only
     // if it exists. CopyFile deletes the destination even on failure, so do the
