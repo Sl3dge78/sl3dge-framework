@@ -18,4 +18,6 @@ typedef int64_t i64;
 typedef int32_t i32;
 typedef float f32;
 
+#define ARRAY_SIZE(array) sizeof(array) / sizeof(array[0])
+
 #endif // COMMON_H
