@@ -147,6 +147,12 @@ Vec3 operator*(Vec3 l, const float r) {
     l.z *= r;
     return l;
 };
+Vec3 operator*(Vec3 l, const Vec3 r) {
+    l.x *= r.x;
+    l.y *= r.y;
+    l.z *= r.z;
+    return l;
+};
 
 /// Y up
 inline Vec3 spherical_to_carthesian(const Vec2f v) {
@@ -351,6 +357,7 @@ void mat4_rotate_x(Mat4 *mat, const float radians) {
     mat->m[3][3] = 1.0f;
 }
 
+// TODO: Maybe this doesn't work
 void mat4_rotate_y(Mat4 *mat, const float radians) {
     mat->m[0][0] = cos(radians);
     mat->m[0][2] = sin(radians);
