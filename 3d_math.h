@@ -75,31 +75,6 @@ inline float radians(const float angle) {
 }
 
 // =====================================================
-/*
-Vec2f operator+(Vec2f l, const Vec2f r) {
-    l.x += r.x;
-    l.y += r.y;
-    return l;
-}
-
-Vec2f operator-(Vec2f l, const Vec2f r) {
-    l.x -= r.x;
-    l.y -= r.y;
-    return l;
-}
-
-Vec2f operator*(Vec2f l, const Vec2f r) {
-    l.x *= r.x;
-    l.y *= r.y;
-    return l;
-}
-
-Vec2f operator*(Vec2f l, f32 r) {
-    l.x *= r;
-    l.y *= r;
-    return l;
-}
-*/
 
 inline void vec2f_print(const Vec2f v) {
     sLog("%f, %f", v.x, v.y);
@@ -141,32 +116,6 @@ inline f32 vec2f_distance(const Vec2f a, const Vec2f b) {
 }
 
 // =====================================================
-/*
-Vec3 operator+(Vec3 l, const Vec3 r) {
-    l.x += r.x;
-    l.y += r.y;
-    l.z += r.z;
-    return l;
-};
-Vec3 operator-(Vec3 l, const Vec3 r) {
-    l.x -= r.x;
-    l.y -= r.y;
-    l.z -= r.z;
-    return l;
-};
-Vec3 operator*(Vec3 l, const float r) {
-    l.x *= r;
-    l.y *= r;
-    l.z *= r;
-    return l;
-};
-Vec3 operator*(Vec3 l, const Vec3 r) {
-    l.x *= r.x;
-    l.y *= r.y;
-    l.z *= r.z;
-    return l;
-};
-*/
 
 /// Y up
 inline Vec3 spherical_to_carthesian(const Vec2f v) {
