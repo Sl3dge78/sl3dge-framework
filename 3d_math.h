@@ -2,6 +2,7 @@
 #define SL_MATH_H
 
 #include <math.h>
+#include <stdalign.h>
 
 #include "types.h"
 /*
@@ -73,7 +74,7 @@ inline float radians(const float angle) {
 }
 
 // =====================================================
-
+/*
 Vec2f operator+(Vec2f l, const Vec2f r) {
     l.x += r.x;
     l.y += r.y;
@@ -97,6 +98,7 @@ Vec2f operator*(Vec2f l, f32 r) {
     l.y *= r;
     return l;
 }
+*/
 
 inline void vec2f_print(const Vec2f v) {
     SDL_Log("%f, %f", v.x, v.y);
@@ -113,11 +115,6 @@ void vec2f_normalize(Vec2f *v) {
     v->y /= length;
 }
 
-inline f32 vec2f_distance(const Vec2f a, const Vec2f b) {
-    Vec2f diff = a - b;
-    return vec2f_length(diff);
-}
-
 inline bool vec2f_in_circle(const Vec2f v, const Vec2f center, f32 radius) {
     return v.x > center.x - radius && v.x < center.x + radius && v.y > center.y - radius &&
            v.y < center.y + radius;
@@ -127,8 +124,23 @@ inline bool vec2f_in_rect(const Vec2f v, const Rect rect) {
     return (v.x > rect.x && v.y > rect.y && v.x < rect.w + rect.x && v.y < rect.h + rect.y);
 }
 
-// =====================================================
+inline Vec2f vec2_sub(const Vec2f r, const Vec2f l) {
+    Vec2f result = {r.x - l.x, r.y - l.y};
+    return result;
+}
 
+inline void vec2_ssub(Vec2f *v, const Vec2f b) {
+    v->x -= b.x;
+    v->y -= b.y;
+}
+
+inline f32 vec2f_distance(const Vec2f a, const Vec2f b) {
+    Vec2f diff = vec2_sub(a, b);
+    return vec2f_length(diff);
+}
+
+// =====================================================
+/*
 Vec3 operator+(Vec3 l, const Vec3 r) {
     l.x += r.x;
     l.y += r.y;
@@ -153,6 +165,7 @@ Vec3 operator*(Vec3 l, const Vec3 r) {
     l.z *= r.z;
     return l;
 };
+*/
 
 /// Y up
 inline Vec3 spherical_to_carthesian(const Vec2f v) {
@@ -169,10 +182,14 @@ inline void vec3_print(const Vec3 *v) {
     SDL_Log("%f, %f, %f", v->x, v->y, v->z);
 }
 
-void vec3_fmul(Vec3 *vec, const float mul) {
-    vec->x *= mul;
-    vec->y *= mul;
-    vec->z *= mul;
+Vec3 vec3_add(const Vec3 a, const Vec3 b) {
+    Vec3 result = {a.x + b.x, a.y + b.y, a.z + b.z};
+    return result;
+}
+
+Vec3 vec3_sub(const Vec3 a, const Vec3 b) {
+    Vec3 result = {a.x - b.x, a.y - b.y, a.z - b.z};
+    return result;
 }
 
 Vec3 vec3_fmul(const Vec3 vec, const float mul) {
@@ -187,7 +204,8 @@ Vec3 vec3_fmul(const Vec3 vec, const float mul) {
 
 Vec3 vec3_normalize(const Vec3 v) {
     float length = sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
-    return Vec3{v.x / length, v.y / length, v.z / length};
+    Vec3 result = {v.x / length, v.y / length, v.z / length};
+    return result;
 }
 
 Vec3 vec3_cross(const Vec3 a, const Vec3 b) {
@@ -242,24 +260,22 @@ Mat4 mat4_mul(const Mat4 *a, const Mat4 *b) {
 }
 
 const Mat4 mat4_identity() {
-    Mat4 result;
-
-    result = {1.0f,
-              0.0f,
-              0.0f,
-              0.0f,
-              0.0f,
-              1.0f,
-              0.0f,
-              0.0f,
-              0.0f,
-              0.0f,
-              1.0f,
-              0.0f,
-              0.0f,
-              0.0f,
-              0.0f,
-              1.0f};
+    Mat4 result = {1.0f,
+                   0.0f,
+                   0.0f,
+                   0.0f,
+                   0.0f,
+                   1.0f,
+                   0.0f,
+                   0.0f,
+                   0.0f,
+                   0.0f,
+                   1.0f,
+                   0.0f,
+                   0.0f,
+                   0.0f,
+                   0.0f,
+                   1.0f};
 
     return result;
 }
@@ -403,7 +419,7 @@ void mat4_rotate_euler(Mat4 *mat, const Vec3 euler) {
 }
 
 Mat4 mat4_look_at(const Vec3 target, const Vec3 eye, const Vec3 up) {
-    Vec3 z_axis = vec3_normalize(eye - target);
+    Vec3 z_axis = vec3_normalize(vec3_sub(eye, target));
     Vec3 x_axis = vec3_normalize(vec3_cross(up, z_axis));
     Vec3 y_axis = vec3_cross(z_axis, x_axis);
 
