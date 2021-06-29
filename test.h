@@ -35,7 +35,7 @@ void TEST_BEGIN() {
 }
 
 void TEST_END() {
-    sLog("Tests completed");
+    sLog("TESTS COMPLETED");
     if(state.test_ok == state.test_count) {
         sLog("ALL TESTS ARE OK");
     } else {
@@ -45,7 +45,7 @@ void TEST_END() {
 }
 
 internal void TestSuccess(const char *file, const u32 line) {
-    sLog("OK  : %s:%d", file, line);
+    //sLog("OK  : %s:%d", file, line);
     state.test_count++;
     state.test_ok++;
 }
