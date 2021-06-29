@@ -1,9 +1,8 @@
-# sl3dge-framework
+# sl3dge-utils
 
-Little framework of helper functions that I've built up over time and end up reusing on most projects.
+Little library of helper functions that I've built up over time and end up reusing on most projects.
 
 types.h > Shorthand typedefs for clarity  
 3d_math.h > Vector, Matrix and Quaternion math  
 debug.h > Memory leaks detection and Asserts  
 module.h > allow for hot reloading of .dll  
-shell.bat > run that in your cmd to be able to use cl.exe
