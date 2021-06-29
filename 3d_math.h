@@ -152,8 +152,12 @@ Vec3 vec3_fmul(const Vec3 vec, const float mul) {
     return (result);
 }
 
+f32 vec3_length(const Vec3 v) {
+    return sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
+}
+
 Vec3 vec3_normalize(const Vec3 v) {
-    float length = sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
+    f32 length = vec3_length(v);
     Vec3 result = {v.x / length, v.y / length, v.z / length};
     return result;
 }

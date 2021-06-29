@@ -8,6 +8,16 @@
     {                                                                                              \
         if(val1 == val2)                                                                           \
             TestSuccess(__FILE__, __LINE__);                                                       \
+        else {                                                                                     \
+            TestFailure(__FILE__, __LINE__);                                                       \
+            sError("Compared values %f != %f", val1, val2);                                        \
+        }                                                                                          \
+    }
+
+#define TEST_PTR(ptr)                                                                              \
+    {                                                                                              \
+        if(ptr)                                                                                    \
+            TestSuccess(__FILE__, __LINE__);                                                       \
         else                                                                                       \
             TestFailure(__FILE__, __LINE__);                                                       \
     }
@@ -26,9 +36,11 @@ void TEST_BEGIN() {
 
 void TEST_END() {
     sLog("Tests completed");
-    sLog("%d/%d tests are ok", state.test_ok, state.test_count);
-    if(state.test_nok > 0) {
-        sError("%d/%d tests failed", state.test_nok, state.test_count);
+    if(state.test_ok == state.test_count) {
+        sLog("ALL TESTS ARE OK");
+    } else {
+        sLog("OK   %d/%d", state.test_ok, state.test_count);
+        sError("FAIL %d/%d", state.test_nok, state.test_count);
     }
 }
 
