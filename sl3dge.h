@@ -3,3 +3,4 @@
 #include "3d_math.h"
 #include "module.h"
 #include "logging.h"
+#include "test.h"

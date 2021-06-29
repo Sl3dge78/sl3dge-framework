@@ -5,7 +5,7 @@
 #include "types.h"
 #include "logging.h"
 
-#if DEBUG
+#if defined(DEBUG)
 
 #define ASSERT(expression)                                                                         \
     if(!(expression)) {                                                                            \
@@ -169,7 +169,7 @@ void PerformEndChecks() {
 #else // #if DEBUG
 
 #define ASSERT(expression)
-#define ASSERT(expression, msg)
+#define ASSERT_MSG(expression, msg)
 #define HANG(expression)
 #define HANG_MSG(expression, msg)
 #define KEEP_CONSOLE_OPEN(value)
