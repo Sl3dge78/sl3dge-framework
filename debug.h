@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include "types.h"
+#include "logging.h"
 
 #if DEBUG
 
@@ -12,7 +13,7 @@
     }
 #define ASSERT_MSG(expression, msg)                                                                \
     if(!(expression)) {                                                                            \
-        SDL_LogError(0, msg);                                                                      \
+        sError(msg);                                                                               \
         __builtin_trap();                                                                          \
     }
 
@@ -23,7 +24,7 @@
 
 #define HANG_MSG(expression, msg)                                                                  \
     if(!(expression))                                                                              \
-        SDL_LogError(0, msg);                                                                      \
+        sError(msg);                                                                               \
     while(1)                                                                                       \
         ;
 
@@ -140,12 +141,11 @@ void DBG_free(void *ptr) {
 bool DBG_DumpMemoryLeaks() {
     int count = 0;
     for(MemoryLeak *leak = array_start; leak != NULL; leak = leak->next) {
-        SDL_LogError(0,
-                     "Memory leak found - Address: %p | Size: %06d | Last alloc: %s:%d",
-                     leak->info.ptr,
-                     (u64)leak->info.size,
-                     leak->info.file,
-                     leak->info.line);
+        sError("Memory leak found - Address: %p | Size: %06d | Last alloc: %s:%d",
+               leak->info.ptr,
+               (u64)leak->info.size,
+               leak->info.file,
+               leak->info.line);
         count++;
     }
     clear_array();

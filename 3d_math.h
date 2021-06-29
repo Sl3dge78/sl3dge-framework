@@ -5,6 +5,7 @@
 #include <stdalign.h>
 
 #include "types.h"
+#include "logging.h"
 /*
 === TODO ===
 
@@ -101,7 +102,7 @@ Vec2f operator*(Vec2f l, f32 r) {
 */
 
 inline void vec2f_print(const Vec2f v) {
-    SDL_Log("%f, %f", v.x, v.y);
+    sLog("%f, %f", v.x, v.y);
 }
 
 inline float vec2f_length(const Vec2f v) {
@@ -179,7 +180,7 @@ inline Vec3 spherical_to_carthesian(const Vec2f v) {
 }
 
 inline void vec3_print(const Vec3 *v) {
-    SDL_Log("%f, %f, %f", v->x, v->y, v->z);
+    sLog("%f, %f, %f", v->x, v->y, v->z);
 }
 
 Vec3 vec3_add(const Vec3 a, const Vec3 b) {
@@ -225,24 +226,24 @@ float vec3_dot(const Vec3 a, const Vec3 b) {
 // =====================================================
 
 void mat4_print(const Mat4 *mat) {
-    SDL_Log("\n%#.3f, %#.3f, %#.3f, %#.3f\n%#.3f, %#.3f, %#.3f, %#.3f\n%#.3f, "
-            "%#.3f, %#.3f, %#.3f\n%#.3f, %#.3f, %#.3f, %#.3f",
-            mat->v[0],
-            mat->v[1],
-            mat->v[2],
-            mat->v[3],
-            mat->v[4],
-            mat->v[5],
-            mat->v[6],
-            mat->v[7],
-            mat->v[8],
-            mat->v[9],
-            mat->v[10],
-            mat->v[11],
-            mat->v[12],
-            mat->v[13],
-            mat->v[14],
-            mat->v[15]);
+    sLog("\n%#.3f, %#.3f, %#.3f, %#.3f\n%#.3f, %#.3f, %#.3f, %#.3f\n%#.3f, "
+         "%#.3f, %#.3f, %#.3f\n%#.3f, %#.3f, %#.3f, %#.3f",
+         mat->v[0],
+         mat->v[1],
+         mat->v[2],
+         mat->v[3],
+         mat->v[4],
+         mat->v[5],
+         mat->v[6],
+         mat->v[7],
+         mat->v[8],
+         mat->v[9],
+         mat->v[10],
+         mat->v[11],
+         mat->v[12],
+         mat->v[13],
+         mat->v[14],
+         mat->v[15]);
 }
 
 Mat4 mat4_mul(const Mat4 *a, const Mat4 *b) {
@@ -556,7 +557,7 @@ void mat4_inverse(const Mat4 *m, Mat4 *out) {
     det = m->v[0] * inv.v[0] + m->v[1] * inv.v[4] + m->v[2] * inv.v[8] + m->v[3] * inv.v[12];
 
     if(det == 0) {
-        SDL_Log("Inverse of matrix doesn't exist");
+        sLog("Inverse of matrix doesn't exist");
         return;
     }
 

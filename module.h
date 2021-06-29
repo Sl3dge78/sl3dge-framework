@@ -56,7 +56,7 @@ internal bool Win32ShouldReloadModule(Module *module) {
 }
 
 internal bool Win32LoadModule(Module *module, const char *name) {
-    SDL_Log("Loading module %s", name);
+    sLog("Loading module %s", name);
 
     u32 name_length = strlen(name);
     const char *path = "bin\\";
@@ -87,22 +87,22 @@ internal bool Win32LoadModule(Module *module, const char *name) {
         DeleteFile(module->tmp_dll);
         if(!CopyFile(orig_dll, module->tmp_dll, FALSE)) {
             DWORD dw = GetLastError();
-            SDL_LogError(0, "Error copying module %s, %d", name, dw);
+            sError("Error copying module %s, %d", name, dw);
         }
     } else {
-        SDL_LogWarn(0, "%s.dll doesn't exist, reloading the previous module.", name);
+        sWarn("%s.dll doesn't exist, reloading the previous module.", name);
     }
 
     module->dll = LoadLibrary(module->tmp_dll);
 
     if(!module->dll) {
-        SDL_LogError(0, "Unable to load module %s", name);
+        sError("Unable to load module %s", name);
         return false;
     }
 
     module->last_write_time = Win32GetLastWriteTime(module->meta_path);
 
-    SDL_Log("Module loaded : %s", name);
+    sLog("Module loaded : %s", name);
     return true;
 }
 
