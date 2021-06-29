@@ -4,6 +4,7 @@
 #define SL_MODULE_H
 
 #include <windows.h>
+#include "types.h"
 
 // SAMPLE
 /*

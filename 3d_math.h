@@ -8,6 +8,7 @@
 === TODO ===
 
  CRITICAL
+- Cleanup function calls
 
  MAJOR
 
