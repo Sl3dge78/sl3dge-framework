@@ -161,10 +161,10 @@ void PerformEndChecks() {
     }
 }
 
-#define smalloc(size) DBG_malloc(size, __FILE__, __LINE__)
-#define scalloc(num, size) DBG_calloc(num, size, __FILE__, __LINE__)
-#define srealloc(ptr, size) DBG_realloc(ptr, size, __FILE__, __LINE__)
-#define sfree(ptr) DBG_free(ptr)
+#define sMalloc(size) DBG_malloc(size, __FILE__, __LINE__)
+#define sCalloc(num, size) DBG_calloc(num, size, __FILE__, __LINE__)
+#define sRealloc(ptr, size) DBG_realloc(ptr, size, __FILE__, __LINE__)
+#define sFree(ptr) DBG_free(ptr)
 
 #else // #if DEBUG
 

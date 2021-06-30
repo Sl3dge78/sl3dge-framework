@@ -9,10 +9,17 @@
 #define MAX_LOG_LENGTH 256
 
 #ifdef DEBUG
-#define sTrace(message, ...) LogOutput(LOG_LEVEL_TRACE, message, ##__VA_ARGS__)
-#define sLog(message, ...) LogOutput(LOG_LEVEL_LOG, message, ##__VA_ARGS__)
-#define sWarn(message, ...) LogOutput(LOG_LEVEL_WARN, message, ##__VA_ARGS__)
-#define sError(message, ...) LogOutput(LOG_LEVEL_ERROR, message, ##__VA_ARGS__)
+// Adds a new line char at the end
+#define sTrace(message, ...) LogOutputLine(LOG_LEVEL_TRACE, message, ##__VA_ARGS__)
+#define sLog(message, ...) LogOutputLine(LOG_LEVEL_LOG, message, ##__VA_ARGS__)
+#define sWarn(message, ...) LogOutputLine(LOG_LEVEL_WARN, message, ##__VA_ARGS__)
+#define sError(message, ...) LogOutputLine(LOG_LEVEL_ERROR, message, ##__VA_ARGS__)
+
+// Raw (no new line added)
+#define srTrace(message, ...) LogOutput(LOG_LEVEL_TRACE, message, ##__VA_ARGS__)
+#define srLog(message, ...) LogOutput(LOG_LEVEL_LOG, message, ##__VA_ARGS__)
+#define srWarn(message, ...) LogOutput(LOG_LEVEL_WARN, message, ##__VA_ARGS__)
+#define srError(message, ...) LogOutput(LOG_LEVEL_ERROR, message, ##__VA_ARGS__)
 #else
 #define sTrace(message, ...)
 #define sLog(message, ...)
@@ -44,7 +51,7 @@ void sLogSetCallback(PFN_LogCallback cb) {
 }
 
 // Outputs string format to console. Adds a new line.
-void LogOutput(u8 level, const char *fmt, ...) {
+void LogOutputLine(u8 level, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
     char buffer[MAX_LOG_LENGTH];
@@ -53,6 +60,19 @@ void LogOutput(u8 level, const char *fmt, ...) {
 
     const u32 length = strlen(buffer);
     strncat_s(buffer, MAX_LOG_LENGTH, "\n\0", MAX_LOG_LENGTH);
+
+    callback(buffer, level);
+}
+
+void LogOutput(u8 level, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    char buffer[MAX_LOG_LENGTH];
+    vsnprintf_s(buffer, MAX_LOG_LENGTH, MAX_LOG_LENGTH, fmt, args);
+    va_end(args);
+
+    const u32 length = strlen(buffer);
+    strncat_s(buffer, MAX_LOG_LENGTH, "\0", MAX_LOG_LENGTH);
 
     callback(buffer, level);
 }

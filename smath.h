@@ -9,13 +9,13 @@
 /*
 === TODO ===
 
- CRITICAL
+CRITICAL
 
- MAJOR
+MAJOR
 
- BACKLOG
+BACKLOG
 
- IMPROVEMENTS
+IMPROVEMENTS
 
 IDEAS
 
@@ -72,6 +72,12 @@ u32 aligned_size(const u32 value, const u32 alignment) {
 
 inline float radians(const float angle) {
     return angle / 180.f * PI;
+}
+
+u32 swap_u32(u32 val) {
+    u32 result = (val >> 8) & 0x0000FF00 | (val << 8) & 0x00FF0000 | (val >> 24) & 0x000000FF |
+                 (val << 24) & 0xFF000000;
+    return result;
 }
 
 // =====================================================

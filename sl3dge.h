@@ -1,6 +1,7 @@
 #include "debug.h"
 #include "types.h"
-#include "3d_math.h"
+#include "smath.h"
 #include "module.h"
 #include "logging.h"
 #include "test.h"
+#include "image.h"
