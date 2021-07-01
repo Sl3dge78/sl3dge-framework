@@ -1,7 +1,5 @@
-/* date = April 25th 2021 0:44 pm */
-
-#ifndef SL_TYPES_H
-#define SL_TYPES_H
+#ifndef STYPES_H
+#define STYPES_H
 
 #include <stdint.h>
 #include <stdlib.h>

@@ -1,9 +1,10 @@
-#ifndef SL_DEBUG_H
-#define SL_DEBUG_H
+#ifndef SDEBUG_H
+#define SDEBUG_H
 
 #include <stdio.h>
-#include "types.h"
-#include "logging.h"
+
+#include "sTypes.h"
+#include "sLogging.h"
 
 #if defined(DEBUG)
 

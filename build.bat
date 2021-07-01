@@ -35,8 +35,8 @@ FOR %%G IN (module1,module2) DO (
     clang %args% %include_path% -shared src/%%G.cpp -o bin/%%G.dll %linker_options% %libs% -Xlinker -PDB:tmp/%%G_%timestamp%.pdb -Xlinker -IMPLIB:tmp/%%G.lib
     if !ERRORLEVEL! == 0 (
         ECHO a > bin/%%G.meta
-        ECHO Ok!
+        ECHO BUILD OK
     )
 )
 
-echo Done!
+EXIT -b %ERRORLEVEL%
