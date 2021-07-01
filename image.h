@@ -155,6 +155,73 @@ void StreamAppendChunk(PNG_DataStream *stream, PNG_DataChunk *chunk) {
     stream->last = chunk;
 }
 
+// Goes through the input array, and writes the amount of occurences of the lengths at index length.
+// If there are three 4 size codes in the input, output[4] will be set to 3
+void HummanGetLengthCounts(const u32 input_size,
+                           const u32 *input,
+                           const u32 output_size,
+                           u32 *output) {
+    for(u32 i = 0; i < input_size; ++i) {
+        output[input[i]]++;
+    }
+}
+
+// Returns the maximum value of the array given
+u32 HuffmanGetMaxLength(const u32 array_size, const u32 *array) {
+    u32 result = 0;
+    for(u32 i = 0; i < array_size; ++i) {
+        if(result < array[i])
+            result = array[i];
+    }
+    return result;
+}
+
+// Generates the first values to use for each code length following the Huffman algorithm
+void HuffmanCreateFirstLengthValues(const u32 *length_counts,
+                                    u32 *first_lengths_values,
+                                    const u32 size) {
+    u32 code = 0;
+    for(u32 i = 1; i < size; ++i) {
+        sTrace("Working on length %X.\nCode=%X\nNew value=%X",
+               i,
+               code,
+               (code + (length_counts[i - 1])) << 1);
+
+        code = (code + (length_counts[i - 1])) << 1;
+        if(length_counts[i] > 0)
+            first_lengths_values[i] = code;
+    }
+}
+
+void HuffmanPrint(const u32 size, const u32 *huffman) {
+    for(u32 i = 0; i < size; i++) {
+        sTrace(BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(huffman[i]));
+    }
+}
+
+void HuffmanCompute(const u32 size, const u32 *lengths, u32 *huffman_table) {
+    u32 max_length = HuffmanGetMaxLength(size, lengths);
+
+    // We will store here the amount of occurences of length i. ie : length_counts[9] == 8 > there are 8 codes with a length of 9
+    u32 *length_counts = sMalloc(sizeof(u32) * max_length + 1);
+    length_counts[0] = 0;
+    HummanGetLengthCounts(size, lengths, max_length, length_counts);
+    // We will store here the next value to assign to a length i. if we want to query the next value for length 4 -> length_values[4].
+    u32 *length_values = sMalloc(sizeof(u32) * max_length + 1);
+
+    length_values[0] = 0;
+
+    HuffmanCreateFirstLengthValues(length_counts, length_values, max_length + 1);
+
+    //huffman_table = sMalloc(sizeof(u32) * size);
+
+    for(u32 i = 0; i < size; ++i) {
+        if(lengths[i] > 0) {
+            huffman_table[i] = length_values[lengths[i]]++;
+        }
+    }
+}
+
 void PNGPrintHeader(const u8 *header) {
     sTrace(
         "PNG : Header \n      %0.2X\n      %0.2X %0.2X %0.2X\n      %0.2X %0.2X\n      %0.2X\n      %0.2X",
@@ -331,25 +398,63 @@ void sLoadImage(const char *path, PNG_Image *image) {
                 HCLEN += 4;
 
                 ASSERT(HCLEN < 19);
-                u32 HCLENTable[19] = {};
+                u32 HCLENLengthTable[19] = {};
                 const u32 HCLENSwizzle[] = {
                     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
 
-                u32 hclen_table_index = 0;
-
                 for(u32 i = 0; i < HCLEN; i++) {
                     u32 value = StreamReadBits(&stream, 3);
-                    sTrace("%d", value);
-                    if(value == 0) {
-                        hclen_table_index++;
-                        continue;
-                    }
-                    HCLENTable[hclen_table_index] = HCLENSwizzle[i];
-                    hclen_table_index++;
+                    HCLENLengthTable[HCLENSwizzle[i]] = value;
                 }
                 sTrace("dkdk");
+            } else if(btype == 1) {
             }
 
+            const u32 FIXED_LENGTH_TABLE[] = {3,  4,  5,  6,   7,   8,   9,   10,  11, 13,
+                                              15, 17, 19, 23,  27,  31,  35,  43,  51, 59,
+                                              67, 83, 99, 115, 131, 163, 195, 227, 258};
+            const u32 FIXED_DISTANCE_TABLE[] = {1,    2,    3,    4,     5,     7,    9,    13,
+                                                17,   25,   33,   49,    65,    97,   129,  193,
+                                                257,  385,  513,  769,   1025,  1537, 2049, 3073,
+                                                4097, 6145, 8193, 12289, 16385, 24577};
+            {
+                u32 code = StreamReadBits(&stream, 9);
+                u32 length = 0;
+                if(code <= 255) {
+                    length = code;
+                } else if(code == 256) {
+                    // End
+                } else {
+                    length = FIXED_LENGTH_TABLE[code - 257];
+
+                    u32 extra_bits = 0;
+                    // TODO optimize a modulo could work here
+                    if(code >= 265 && code <= 268) {
+                        extra_bits = 1;
+                    } else if(code >= 269 && code <= 272) {
+                        extra_bits = 2;
+                    } else if(code >= 273 && code <= 276) {
+                        extra_bits = 3;
+                    } else if(code >= 277 && code <= 280) {
+                        extra_bits = 4;
+                    } else if(code >= 281 && code <= 284) {
+                        extra_bits = 5;
+                    } else if(code == 285) {
+                        extra_bits = 0;
+                    }
+                    length += StreamReadBits(&stream, extra_bits);
+                    // ! This could be backwards : "The extra bits should be interpreted as a machine integer stored with the -significant bit first, e.g., bits 1110 represent the value 14.
+                }
+            }
+            {
+                u32 code = StreamReadBits(&stream, 5);
+                u32 extra_bits = 0;
+                if(code >= 4) {
+                    extra_bits = ((code - 4) % 2) + ((code - 4) / 2);
+                }
+                u32 distance = FIXED_DISTANCE_TABLE[code];
+                distance += StreamReadBits(&stream, extra_bits); // This could be backwards
+            }
             /*
             for(;;) {
                 u32 code = Read(head);

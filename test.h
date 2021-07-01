@@ -10,7 +10,7 @@
             TestSuccess(__FILE__, __LINE__);                                                       \
         else {                                                                                     \
             TestFailure(__FILE__, __LINE__);                                                       \
-            sError("Compared values %x != %x", val1, val2);                                        \
+            sError("Compared values %u != %u", val1, val2);                                        \
         }                                                                                          \
     }
 

@@ -27,6 +27,12 @@
 #define sError(message, ...)
 #endif
 
+#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+#define BYTE_TO_BINARY(byte)                                                                       \
+    (byte & 0x80 ? '1' : '0'), (byte & 0x40 ? '1' : '0'), (byte & 0x20 ? '1' : '0'),               \
+        (byte & 0x10 ? '1' : '0'), (byte & 0x08 ? '1' : '0'), (byte & 0x04 ? '1' : '0'),           \
+        (byte & 0x02 ? '1' : '0'), (byte & 0x01 ? '1' : '0')
+
 enum LogLevel { LOG_LEVEL_TRACE, LOG_LEVEL_LOG, LOG_LEVEL_WARN, LOG_LEVEL_ERROR };
 
 typedef void LogCallback_t(const char *message, const u8 level);
