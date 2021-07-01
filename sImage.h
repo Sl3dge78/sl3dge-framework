@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "types.h"
-#include "logging.h"
-#include "debug.h"
+#include "sTypes.h"
+#include "sLogging.h"
+#include "sDebug.h"
 
 typedef struct {
     u32 width;
@@ -182,11 +182,6 @@ void HuffmanCreateFirstLengthValues(const u32 *length_counts,
                                     const u32 size) {
     u32 code = 0;
     for(u32 i = 1; i < size; ++i) {
-        sTrace("Working on length %X.\nCode=%X\nNew value=%X",
-               i,
-               code,
-               (code + (length_counts[i - 1])) << 1);
-
         code = (code + (length_counts[i - 1])) << 1;
         if(length_counts[i] > 0)
             first_lengths_values[i] = code;
@@ -212,8 +207,6 @@ void HuffmanCompute(const u32 size, const u32 *lengths, u32 *huffman_table) {
     length_values[0] = 0;
 
     HuffmanCreateFirstLengthValues(length_counts, length_values, max_length + 1);
-
-    //huffman_table = sMalloc(sizeof(u32) * size);
 
     for(u32 i = 0; i < size; ++i) {
         if(lengths[i] > 0) {

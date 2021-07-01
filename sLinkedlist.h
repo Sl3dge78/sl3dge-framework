@@ -1,7 +1,10 @@
+#ifndef SLINKEDLIST_H
+#define SLINKEDLIST_H
+
 #include <string.h>
 
-#include "types.h"
-#include "debug.h"
+#include "sTypes.h"
+#include "sDebug.h"
 
 #define ARRAY_INIT_SIZE 10
 
@@ -112,3 +115,5 @@ void llclear(List *ll) {
         i = n;
     }
 }
+
+#endif

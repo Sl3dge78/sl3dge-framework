@@ -1,7 +1,5 @@
-/* date = June 12th 2021 11:28 am */
-
-#ifndef SL_MODULE_H
-#define SL_MODULE_H
+#ifndef SMODULE_H
+#define SMODULE_H
 
 #include <windows.h>
 

@@ -1,11 +1,11 @@
-#ifndef SL_MATH_H
-#define SL_MATH_H
+#ifndef SMATH_H
+#define SMATH_H
 
 #include <math.h>
 #include <stdalign.h>
 
-#include "types.h"
-#include "logging.h"
+#include "sTypes.h"
+#include "sLogging.h"
 /*
 === TODO ===
 

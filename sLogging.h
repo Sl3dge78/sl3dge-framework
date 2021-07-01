@@ -1,25 +1,26 @@
-#ifndef LOGGING_H
-#define LOGGING_H
+#ifndef SLOGGING_H
+#define SLOGGING_H
 
-#include "types.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "sTypes.h"
 
 #define MAX_LOG_LENGTH 256
 
 #ifdef DEBUG
 // Adds a new line char at the end
-#define sTrace(message, ...) LogOutputLine(LOG_LEVEL_TRACE, message, ##__VA_ARGS__)
-#define sLog(message, ...) LogOutputLine(LOG_LEVEL_LOG, message, ##__VA_ARGS__)
-#define sWarn(message, ...) LogOutputLine(LOG_LEVEL_WARN, message, ##__VA_ARGS__)
-#define sError(message, ...) LogOutputLine(LOG_LEVEL_ERROR, message, ##__VA_ARGS__)
+#define sTrace(message, ...) sLogOutputLine(LOG_LEVEL_TRACE, message, ##__VA_ARGS__)
+#define sLog(message, ...) sLogOutputLine(LOG_LEVEL_LOG, message, ##__VA_ARGS__)
+#define sWarn(message, ...) sLogOutputLine(LOG_LEVEL_WARN, message, ##__VA_ARGS__)
+#define sError(message, ...) sLogOutputLine(LOG_LEVEL_ERROR, message, ##__VA_ARGS__)
 
 // Raw (no new line added)
-#define srTrace(message, ...) LogOutput(LOG_LEVEL_TRACE, message, ##__VA_ARGS__)
-#define srLog(message, ...) LogOutput(LOG_LEVEL_LOG, message, ##__VA_ARGS__)
-#define srWarn(message, ...) LogOutput(LOG_LEVEL_WARN, message, ##__VA_ARGS__)
-#define srError(message, ...) LogOutput(LOG_LEVEL_ERROR, message, ##__VA_ARGS__)
+#define srTrace(message, ...) sLogOutput(LOG_LEVEL_TRACE, message, ##__VA_ARGS__)
+#define srLog(message, ...) sLogOutput(LOG_LEVEL_LOG, message, ##__VA_ARGS__)
+#define srWarn(message, ...) sLogOutput(LOG_LEVEL_WARN, message, ##__VA_ARGS__)
+#define srError(message, ...) sLogOutput(LOG_LEVEL_ERROR, message, ##__VA_ARGS__)
 #else
 #define sTrace(message, ...)
 #define sLog(message, ...)
@@ -33,7 +34,14 @@
         (byte & 0x10 ? '1' : '0'), (byte & 0x08 ? '1' : '0'), (byte & 0x04 ? '1' : '0'),           \
         (byte & 0x02 ? '1' : '0'), (byte & 0x01 ? '1' : '0')
 
-enum LogLevel { LOG_LEVEL_TRACE, LOG_LEVEL_LOG, LOG_LEVEL_WARN, LOG_LEVEL_ERROR };
+enum LogLevel {
+    LOG_LEVEL_NONE = 0,
+    LOG_LEVEL_TRACE,
+    LOG_LEVEL_LOG,
+    LOG_LEVEL_WARN,
+    LOG_LEVEL_ERROR
+};
+enum LogColor { LOG_COLOR_WHITE, LOG_COLOR_RED, LOG_COLOR_YELLOW, LOG_COLOR_GREY, LOG_COLOR_GREEN };
 
 typedef void LogCallback_t(const char *message, const u8 level);
 typedef LogCallback_t *PFN_LogCallback;
@@ -43,6 +51,7 @@ global PFN_LogCallback callback = &DefaultLog;
 
 void DefaultLog(const char *message, const u8 level) {
     switch(level) {
+    case LOG_LEVEL_NONE: break;
     case LOG_LEVEL_ERROR: printf("\033[0;31m"); break;
     case LOG_LEVEL_WARN: printf("\033[0;33m"); break;
     case LOG_LEVEL_LOG: printf("\033[0m"); break;
@@ -57,7 +66,7 @@ void sLogSetCallback(PFN_LogCallback cb) {
 }
 
 // Outputs string format to console. Adds a new line.
-void LogOutputLine(u8 level, const char *fmt, ...) {
+void sLogOutputLine(u8 level, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
     char buffer[MAX_LOG_LENGTH];
@@ -70,7 +79,7 @@ void LogOutputLine(u8 level, const char *fmt, ...) {
     callback(buffer, level);
 }
 
-void LogOutput(u8 level, const char *fmt, ...) {
+void sLogOutput(u8 level, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
     char buffer[MAX_LOG_LENGTH];
@@ -81,6 +90,26 @@ void LogOutput(u8 level, const char *fmt, ...) {
     strncat_s(buffer, MAX_LOG_LENGTH, "\0", MAX_LOG_LENGTH);
 
     callback(buffer, level);
+}
+
+typedef void LogColorCallback_t(enum LogColor color);
+typedef LogColorCallback_t *PFN_LogColorCallback;
+LogColorCallback_t DefaultLogSetColor;
+
+global PFN_LogColorCallback color_callback = &DefaultLogSetColor;
+
+void sLogSetColor(enum LogColor color) {
+    color_callback(color);
+}
+
+void DefaultLogSetColor(enum LogColor color) {
+    switch(color) {
+    case(LOG_COLOR_WHITE): printf("\033[0m"); break;
+    case(LOG_COLOR_RED): printf("\033[0;31m"); break;
+    case(LOG_COLOR_YELLOW): printf("\033[0;33m"); break;
+    case(LOG_COLOR_GREY): printf("\033[1;30m"); break;
+    case(LOG_COLOR_GREEN): printf("\033[0;32m"); break;
+    }
 }
 
 #endif

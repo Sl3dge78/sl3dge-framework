@@ -1,16 +1,19 @@
-#ifndef TEST_H
-#define TEST_H
+#ifndef STESTS_H
+#define STESTS_H
 
-#include "types.h"
-#include "logging.h"
+#include "sTypes.h"
+#include "sLogging.h"
 
-#define TEST_EQUALS(val1, val2)                                                                    \
+#define TEST_EQUALS(v1, v2, fmt)                                                                   \
     {                                                                                              \
-        if(val1 == val2)                                                                           \
+        if(v1 == v2) {                                                                             \
             TestSuccess(__FILE__, __LINE__);                                                       \
-        else {                                                                                     \
+            sLogSetColor(LOG_COLOR_GREEN);                                                         \
+            sLogOutputLine(0, fmt " == " fmt, v1, v2);                                             \
+        } else {                                                                                   \
             TestFailure(__FILE__, __LINE__);                                                       \
-            sError("Compared values %u != %u", val1, val2);                                        \
+            sLogSetColor(LOG_COLOR_RED);                                                           \
+            sLogOutputLine(0, fmt " != " fmt, v1, v2);                                             \
         }                                                                                          \
     }
 
@@ -32,6 +35,8 @@ global TestState state;
 
 void TEST_BEGIN() {
     state = (TestState){};
+    sLog("TEST BEGIN");
+    sLog("GOT -- EXPECTED");
 }
 
 void TEST_END() {
