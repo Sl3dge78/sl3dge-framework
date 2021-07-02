@@ -2,7 +2,10 @@
 
 Little library of helper functions that I've built up over time and end up reusing on most projects.
 
-types.h > Shorthand typedefs for clarity  
-3d_math.h > Vector, Matrix and Quaternion math  
-debug.h > Memory leaks detection and Asserts  
-module.h > allow for hot reloading of .dll  
+sDebug.h > Memory leaks detection and Asserts
+sImage.h > WIP .png files parser
+sLinkedlist.h > WIP linked list. Need to make it type agnostic
+sLogging.h > Various logging utils. Set the callbacks.
+sMath.h > Vector, Matrix and Quaternion math
+sModule.h > allow for hot reloading of .dll
+sTypes.h > Shorthand typedefs for clarity
