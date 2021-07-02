@@ -77,7 +77,7 @@ void StreamFlushBits(PNG_DataStream *stream) {
     stream->bit_buffer = 0;
 }
 
-#define StreamRead(stream, type) *(type *)StreamReadSize(stream, sizeof(type))
+#define StreamRead(stream, type) (type *)StreamReadSize(stream, sizeof(type))
 
 void *StreamReadSize(PNG_DataStream *stream, u32 size) {
     void *result = 0;
@@ -104,12 +104,30 @@ void *StreamReadSize(PNG_DataStream *stream, u32 size) {
     return result;
 }
 
-u32 StreamReadBits(PNG_DataStream *stream, u8 count) {
+#define StreamPeek(stream, type) *(type *)StreamPeekSize(stream, typeof(type))
+
+void *StreamPeekSize(PNG_DataStream *stream, const u32 size) {
+    void *result = 0;
+    if(stream->contents_size > size) {
+        result = stream->contents;
+    } else {
+        // FIXME
+        sError("Overflow, implement me! :)");
+    }
+    if(!result) {
+        sError("File underflow");
+        stream->contents_size = 0;
+    }
+
+    return result;
+}
+
+u32 StreamReadBits(PNG_DataStream *stream, const u8 count) {
     u32 result = 0;
     u8 bits_remaining = count;
 
     while(stream->bits_left < count && stream->contents_size) {
-        u32 byte = StreamRead(stream, u8);
+        u32 byte = *StreamRead(stream, u8);
         stream->bit_buffer |= byte << stream->bits_left;
         stream->bits_left += 8;
     }
@@ -155,12 +173,52 @@ void StreamAppendChunk(PNG_DataStream *stream, PNG_DataChunk *chunk) {
     stream->last = chunk;
 }
 
+u32 StreamPeekBitsSwapped(PNG_DataStream *stream, const u8 size) {
+    u32 result = 0;
+    if(stream->bits_left < size) {
+        u8 *ptr = StreamRead(stream, u8);
+        u8 byte = 0;
+        if(ptr) {
+            byte = *ptr;
+        } else {
+            sWarn("EOF reached");
+        }
+        stream->bit_buffer |= byte << stream->bits_left;
+        stream->bits_left += 8;
+    }
+    result |= stream->bit_buffer & ((1 << size) - 1);
+
+    u8 swapped = 0;
+    for(u8 i = 0; i < size; ++i) {
+        swapped <<= 1;
+        u8 bit = result & (1 << i);
+        swapped |= (bit > 0);
+    }
+    return swapped;
+}
+
+u32 HuffmanDecode(PNG_DataStream *stream, const u32 *codes, const u32 *lengths, const u32 size) {
+    u8 code = 0;
+    for(u32 i = 0; i < size; i++) {
+        code = StreamPeekBitsSwapped(stream, lengths[i]);
+        sTrace("search : %d - length : %d - lookup %d", code, lengths[i], codes[i]);
+        if(code == codes[i]) {
+            sTrace("Found : %d == %d. Index: %u",code, codes[i], i);
+            code = StreamReadBits(stream, lengths[i]);
+            return i;
+        }
+    }
+
+    sError("Unable to find correspondance");
+    return 0;
+}
+
 // Goes through the input array, and writes the amount of occurences of the lengths at index length.
 // If there are three 4 size codes in the input, output[4] will be set to 3
-void HummanGetLengthCounts(const u32 input_size,
-                           const u32 *input,
-                           const u32 output_size,
-                           u32 *output) {
+void HuffmanGetLengthCounts(const u32 input_size,
+                            const u32 *input,
+                            const u32 output_size,
+                            u32 *output) {
     for(u32 i = 0; i < input_size; ++i) {
         output[input[i]]++;
     }
@@ -200,7 +258,7 @@ void HuffmanCompute(const u32 size, const u32 *lengths, u32 *huffman_table) {
     // We will store here the amount of occurences of length i. ie : length_counts[9] == 8 > there are 8 codes with a length of 9
     u32 *length_counts = sMalloc(sizeof(u32) * max_length + 1);
     length_counts[0] = 0;
-    HummanGetLengthCounts(size, lengths, max_length, length_counts);
+    HuffmanGetLengthCounts(size, lengths, max_length, length_counts);
     // We will store here the next value to assign to a length i. if we want to query the next value for length 4 -> length_values[4].
     u32 *length_values = sMalloc(sizeof(u32) * max_length + 1);
 
@@ -377,8 +435,8 @@ void sLoadImage(const char *path, PNG_Image *image) {
         u8 btype = StreamReadBits(&stream, 2);
         StreamFlushBits(&stream);
         if(btype == 0) { // Uncompressed
-            u32 len = StreamRead(&stream, u32);
-            u32 nlen = StreamRead(&stream, u32);
+            u32 len = *StreamRead(&stream, u32);
+            u32 nlen = *StreamRead(&stream, u32);
         } else {
             if(btype == 2) { // Dynamic Huffman tree
                 // TODO read the huffman tree

@@ -79,6 +79,15 @@ u32 swap_u32(u32 val) {
                  (val << 24) & 0xFF000000;
     return result;
 }
+u8 swap_u8(u8 val) {
+    u8 result = 0;
+    for(u8 i = 0; i < 8; ++i) {
+        result <<= 1;
+        u8 bit = val & (1 << i);
+        result |= (bit > 0);
+    }
+    return result;
+}
 
 // =====================================================
 
