@@ -210,7 +210,7 @@ u32 swap_bits(const u32 in, const u8 bit_size) {
 
 u32 StreamPeekBitsSwapped(PNG_DataStream *stream, const u8 size) {
     u32 result = 0;
-    if(stream->bits_left < size) {
+    while(stream->bits_left < size) {
         u8 *ptr = StreamRead(stream, u8);
         u8 byte = 0;
         if(ptr) {
@@ -439,7 +439,7 @@ void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
         idat.fdict = StreamReadBits(stream, 1);
         idat.flevel = StreamReadBits(stream, 2);
 
-        sTrace("CM : %d", idat.cm, idat.cinfo);
+        ASSERT(idat.cm == 8);
 
         if(idat.fdict) {
             sError("ADLER32 in this stream, this isn't handled.");
@@ -503,11 +503,11 @@ void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
                         repeated_value = 0;
                     } break;
                     }
-                    ASSERT(repeats + index < HLIT + HDIST);
+                    ASSERT(repeats + index <= HLIT + HDIST);
                     for(u32 i = 0; i < repeats; ++i) {
                         HLITHDISTLengths[index] = repeated_value;
                         index++;
-                        ASSERT(index < HLIT + HDIST);
+                        ASSERT(index <= HLIT + HDIST);
                     }
                 }
 
