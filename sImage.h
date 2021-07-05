@@ -2,10 +2,14 @@
     == WARNING : THIS IS HIGHLY UNOPTIMIZED CODE ==
 
     TODO :
-    - Clear the debug stuff (in huffman decode we loop through every entry to check for dupes, this isn't necessary)
+    -
+    -
+
     - Bit swapping is dumb, find a better way
-    - 50000 else if to change to a table
     - The bit stream could probably be better too
+    - Remove empty entries in tables
+    - HuffmanDecode : maybe sort the tables by lengths so that we don't need to read through the bitstream everytime
+    - Let's try using a profiler on this to see how they work.
 
 */
 
@@ -431,20 +435,19 @@ void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
     bool bfinal = 0;
     u32 bytes = 0;
     u8 *dbg_start = out_ptr;
+    PNG_IDAT idat = {};
+    idat.cm = StreamReadBits(stream, 4);
+    idat.cinfo = StreamReadBits(stream, 4);
+    idat.fcheck = StreamReadBits(stream, 5);
+    idat.fdict = StreamReadBits(stream, 1);
+    idat.flevel = StreamReadBits(stream, 2);
+
+    ASSERT(idat.cm == 8);
+
+    if(idat.fdict) {
+        sError("ADLER32 in this stream, this isn't handled.");
+    }
     do {
-        PNG_IDAT idat = {};
-        idat.cm = StreamReadBits(stream, 4);
-        idat.cinfo = StreamReadBits(stream, 4);
-        idat.fcheck = StreamReadBits(stream, 5);
-        idat.fdict = StreamReadBits(stream, 1);
-        idat.flevel = StreamReadBits(stream, 2);
-
-        ASSERT(idat.cm == 8);
-
-        if(idat.fdict) {
-            sError("ADLER32 in this stream, this isn't handled.");
-        }
-
         bfinal = StreamReadBits(stream, 1);
 
         u8 btype = StreamReadBits(stream, 2);
@@ -517,6 +520,7 @@ void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
                 HuffmanCompute(HDIST, HLITHDISTLengths + HLIT, distance_table);
                 sFree(HCLENCodes);
             } else if(btype == 1) {
+                ASSERT(0);
             }
 
             u32 iter = 0;
@@ -531,7 +535,7 @@ void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
                     bytes++;
                     continue;
                 } else if(length_code == 256) {
-                    sTrace("End Ok");
+                    sTrace("PNG : End of packet");
                     break;
                 } else {
                     u32 length = FIXED_LENGTH_TABLE[length_code - 257];
@@ -552,6 +556,8 @@ void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
                     }
 
                     u8 *head = out_ptr - (distance);
+                    u32 max_length = dbg_end - dbg_start - bytes;
+                    ASSERT(length <= max_length);
                     ASSERT(head >= dbg_start);
                     ASSERT(out_ptr + length <= dbg_end);
                     ASSERT(head + length <= dbg_end);
@@ -605,10 +611,37 @@ void PNGDefilter(PNG_Image *image, u8 *decompressed_image) {
             }
         } break;
         case(2): { // Up
-            ASSERT_MSG(0, "I am not implemented!");
+            u32 b = 0;
+            for(u32 i = 0; i < image->width; i++) {
+                // Fun times
+                out_ptr[0] = in_ptr[0] + ((u8 *)&b)[0];
+                out_ptr[1] = in_ptr[1] + ((u8 *)&b)[1];
+                out_ptr[2] = in_ptr[2] + ((u8 *)&b)[2];
+                out_ptr[3] = image->bpp == 4 ? in_ptr[3] + ((u8 *)&b)[3] : 0xFF;
+
+                b = *(u32 *)(out_ptr - (image->width * 4));
+                out_ptr += 4;
+                in_ptr += image->bpp;
+            }
         } break;
         case(3): { // Avg
-            ASSERT_MSG(0, "I am not implemented!");
+
+            u32 a = 0;
+            u32 b = 0;
+
+            for(u32 i = 0; i < image->width; i++) {
+                //  TODO This is horrible
+                out_ptr[0] = in_ptr[0] + (((u8 *)&a)[0] + ((u8 *)&b)[0]) / 2;
+                out_ptr[1] = in_ptr[1] + (((u8 *)&a)[1] + ((u8 *)&b)[1]) / 2;
+                out_ptr[2] = in_ptr[2] + (((u8 *)&a)[2] + ((u8 *)&b)[2]) / 2;
+                out_ptr[3] =
+                    image->bpp == 4 ? in_ptr[3] + (((u8 *)&a)[3] + ((u8 *)&b)[3]) / 2 : 0xFF;
+
+                a = *(u32 *)out_ptr;
+                b = *(u32 *)(out_ptr - (image->width * 4));
+                out_ptr += 4;
+                in_ptr += image->bpp;
+            }
         } break;
         case(4): { // Paeth
             ASSERT_MSG(0, "I am not implemented!");

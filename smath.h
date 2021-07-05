@@ -6,20 +6,7 @@
 
 #include "sTypes.h"
 #include "sLogging.h"
-/*
-=== TODO ===
 
-CRITICAL
-
-MAJOR
-
-BACKLOG
-
-IMPROVEMENTS
-
-IDEAS
-
-*/
 #define PI 3.1415926535897932384626433f
 #define MAX(x, y) x > y ? x : y
 
@@ -342,7 +329,6 @@ void mat4_rotate_x(Mat4 *mat, const float radians) {
     mat->m[3][3] = 1.0f;
 }
 
-// TODO: Maybe this doesn't work
 void mat4_rotate_y(Mat4 *mat, const float radians) {
     mat->m[0][0] = cos(radians);
     mat->m[0][2] = sin(radians);
