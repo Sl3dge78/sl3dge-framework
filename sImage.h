@@ -1,3 +1,14 @@
+/*
+    == WARNING : THIS IS HIGHLY UNOPTIMIZED CODE ==
+
+    TODO :
+    - Clear the debug stuff (in huffman decode we loop through every entry to check for dupes, this isn't necessary)
+    - Bit swapping is dumb, find a better way
+    - 50000 else if to change to a table
+    - The bit stream could probably be better too
+
+*/
+
 #ifndef SIMAGE_H
 #define SIMAGE_H
 
@@ -71,6 +82,17 @@ typedef struct {
     u8 flevel;
 
 } PNG_IDAT;
+
+const u32 FIXED_LENGTH_TABLE[] = {3,  4,  5,  6,  7,  8,  9,  10, 11,  13,  15,  17,  19,  23, 27,
+                                  31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258};
+const u32 LENGTH_EXTRA_BITS[] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2,
+                                 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0};
+
+const u32 DIST_EXTRA_BITS[] = {0, 0, 0, 0, 1, 1, 2, 2,  3,  3,  4,  4,  5,  5,  6,
+                               6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13};
+const u32 FIXED_DISTANCE_TABLE[] = {1,    2,    3,    4,    5,    7,    9,    13,    17,    25,
+                                    33,   49,   65,   97,   129,  193,  257,  385,   513,   769,
+                                    1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577};
 
 void StreamFlushBits(PNG_DataStream *stream) {
     stream->bits_left = 0;
@@ -173,6 +195,16 @@ void StreamAppendChunk(PNG_DataStream *stream, PNG_DataChunk *chunk) {
     stream->last = chunk;
 }
 
+u32 swap_bits(const u32 in, const u8 bit_size) {
+    u32 swapped = 0;
+    for(u8 i = 0; i < bit_size; ++i) {
+        swapped <<= 1;
+        u32 bit = in & (1 << i);
+        swapped |= (bit > 0);
+    }
+    return swapped;
+}
+
 u32 StreamPeekBitsSwapped(PNG_DataStream *stream, const u8 size) {
     u32 result = 0;
     if(stream->bits_left < size) {
@@ -188,29 +220,7 @@ u32 StreamPeekBitsSwapped(PNG_DataStream *stream, const u8 size) {
     }
     result |= stream->bit_buffer & ((1 << size) - 1);
 
-    u8 swapped = 0;
-    for(u8 i = 0; i < size; ++i) {
-        swapped <<= 1;
-        u8 bit = result & (1 << i);
-        swapped |= (bit > 0);
-    }
-    return swapped;
-}
-
-u32 HuffmanDecode(PNG_DataStream *stream, const u32 *codes, const u32 *lengths, const u32 size) {
-    u8 code = 0;
-    for(u32 i = 0; i < size; i++) {
-        code = StreamPeekBitsSwapped(stream, lengths[i]);
-        sTrace("search : %d - length : %d - lookup %d", code, lengths[i], codes[i]);
-        if(code == codes[i]) {
-            sTrace("Found : %d == %d. Index: %u",code, codes[i], i);
-            code = StreamReadBits(stream, lengths[i]);
-            return i;
-        }
-    }
-
-    sError("Unable to find correspondance");
-    return 0;
+    return swap_bits(result, size);
 }
 
 // Goes through the input array, and writes the amount of occurences of the lengths at index length.
@@ -241,8 +251,8 @@ void HuffmanCreateFirstLengthValues(const u32 *length_counts,
     u32 code = 0;
     for(u32 i = 1; i < size; ++i) {
         code = (code + (length_counts[i - 1])) << 1;
-        if(length_counts[i] > 0)
-            first_lengths_values[i] = code;
+        //if(length_counts[i] > 0)
+        first_lengths_values[i] = code;
     }
 }
 
@@ -256,21 +266,49 @@ void HuffmanCompute(const u32 size, const u32 *lengths, u32 *huffman_table) {
     u32 max_length = HuffmanGetMaxLength(size, lengths);
 
     // We will store here the amount of occurences of length i. ie : length_counts[9] == 8 > there are 8 codes with a length of 9
-    u32 *length_counts = sMalloc(sizeof(u32) * max_length + 1);
+    u32 *length_counts = sCalloc(max_length + 1, sizeof(u32));
+
+    HuffmanGetLengthCounts(size, lengths, max_length + 1, length_counts);
     length_counts[0] = 0;
-    HuffmanGetLengthCounts(size, lengths, max_length, length_counts);
     // We will store here the next value to assign to a length i. if we want to query the next value for length 4 -> length_values[4].
-    u32 *length_values = sMalloc(sizeof(u32) * max_length + 1);
+    u32 *length_values = sCalloc(max_length + 1, sizeof(u32));
 
     length_values[0] = 0;
 
     HuffmanCreateFirstLengthValues(length_counts, length_values, max_length + 1);
 
     for(u32 i = 0; i < size; ++i) {
-        if(lengths[i] > 0) {
+        if(lengths[i] != 0) {
             huffman_table[i] = length_values[lengths[i]]++;
         }
     }
+}
+
+u32 HuffmanDecode(PNG_DataStream *stream, const u32 *codes, const u32 *lengths, const u32 size) {
+    u32 result = 0;
+    bool found = false;
+    u32 length = 0;
+    for(u32 i = 0; i < size; i++) {
+        if(lengths[i] == 0)
+            continue;
+        u32 code = StreamPeekBitsSwapped(stream, lengths[i]);
+        //sTrace("search : %d - length : %d - lookup %d", code, lengths[i], codes[i]);
+        if(code == codes[i]) {
+            //sTrace("Found : %d == %d. Index: %u", code, codes[i], i);
+            length = lengths[i];
+
+            if(found) {
+                sTrace("Two results possible!");
+            }
+            ASSERT(!found);
+            found = true;
+            result = i;
+        }
+    }
+    ASSERT_MSG(found, "Unable to find correspondance");
+
+    u32 garbage = StreamReadBits(stream, length);
+    return result;
 }
 
 void PNGPrintHeader(const u8 *header) {
@@ -328,6 +366,262 @@ void PNGReadPacket(FILE *file, PNG_Packet *packet) {
     //sTrace("PNG : CRC : %d", packet->crc);
 }
 
+bool PNGParse(FILE *file, PNG_DataStream *stream, PNG_Image *image) {
+    for(;;) {
+        sTrace("----");
+        PNG_Packet packet = {};
+        PNGReadPacket(file, &packet);
+
+        if(packet.type == PNG_TYPE_IEND)
+            break;
+
+        switch(packet.type) {
+        case PNG_TYPE_IHDR: {
+            PNG_IHDR hdr = {};
+            memcpy(&hdr, packet.data, sizeof(PNG_IHDR));
+
+            if(hdr.interlaced == 1) {
+                sError("Image is interlaced, this isn't supported yet");
+                return false;
+            }
+
+            if(hdr.color_type != 2 && hdr.color_type != 6) {
+                sError("Image isn't RGB or ARGB, this isn't supported yet");
+                return false;
+            }
+            if(hdr.filter != 0) {
+                sError("Filters are unsupported yet");
+                return false;
+            }
+
+            image->width = swap_u32(hdr.width);
+            image->height = swap_u32(hdr.height);
+
+            switch(hdr.color_type) {
+            //case(0): image->bpp = hdr.bit_depth; break;
+            case(2): image->bpp = (hdr.bit_depth * 3) / 8; break;
+            //case(3): image->bpp = hdr.bit_depth ; break;
+            //case(4): image->bpp = (hdr.bit_depth * 2) / 8; break; // Grayscale + Alpha
+            case(6): image->bpp = (hdr.bit_depth * 4) / 8; break; // RGB + Alpha
+            }
+
+            image->size = image->width * image->height * image->bpp;
+
+            sTrace("%dx%d (%dbpp)", image->width, image->height, image->bpp);
+        } break;
+        case PNG_TYPE_IDAT: {
+            // https://www.ietf.org/rfc/rfc1950.txt
+
+            PNG_DataChunk *chunk = sMalloc(sizeof(PNG_DataChunk));
+
+            chunk->data = packet.data;
+            chunk->size = packet.length;
+
+            StreamAppendChunk(stream, chunk);
+
+        } break;
+        default: {
+            sTrace("PNG : Skipping packet");
+            continue;
+        }
+        }
+    }
+    return true;
+}
+
+void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
+    // https://www.ietf.org/rfc/rfc1951.txt
+    bool bfinal = 0;
+    u32 bytes = 0;
+    u8 *dbg_start = out_ptr;
+    do {
+        PNG_IDAT idat = {};
+        idat.cm = StreamReadBits(stream, 4);
+        idat.cinfo = StreamReadBits(stream, 4);
+        idat.fcheck = StreamReadBits(stream, 5);
+        idat.fdict = StreamReadBits(stream, 1);
+        idat.flevel = StreamReadBits(stream, 2);
+
+        sTrace("CM : %d", idat.cm, idat.cinfo);
+
+        if(idat.fdict) {
+            sError("ADLER32 in this stream, this isn't handled.");
+        }
+
+        bfinal = StreamReadBits(stream, 1);
+
+        u8 btype = StreamReadBits(stream, 2);
+        if(btype == 0) { // Uncompressed
+            StreamFlushBits(stream);
+            u32 len = *StreamRead(stream, u32);
+            u32 nlen = *StreamRead(stream, u32);
+            // TODO
+        } else {
+            u32 *litlen_table;
+            u32 *distance_table;
+            u32 *HLITHDISTLengths;
+            u32 HDIST;
+            u32 HLIT;
+            if(btype == 2) { // Dynamic Huffman tree
+                HLIT = StreamReadBits(stream, 5) + 257;
+                HDIST = StreamReadBits(stream, 5) + 1;
+                u32 HCLEN = StreamReadBits(stream, 4) + 4;
+
+                u32 HCLENLengthTable[19] = {};
+                const u32 HCLENSwizzle[] = {
+                    16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
+
+                for(u32 i = 0; i < HCLEN; i++) {
+                    u32 value = StreamReadBits(stream, 3);
+                    HCLENLengthTable[HCLENSwizzle[i]] = value;
+                }
+                u32 *HCLENCodes = sCalloc(19, sizeof(u32));
+                HuffmanCompute(19, HCLENLengthTable, HCLENCodes);
+
+                HLITHDISTLengths = sCalloc(HLIT + HDIST, sizeof(u32));
+                u32 index = 0;
+                while(index < HLIT + HDIST) {
+                    u32 decoded = HuffmanDecode(stream, HCLENCodes, HCLENLengthTable, 19);
+                    if(decoded < 16) {
+                        HLITHDISTLengths[index] = decoded;
+                        index++;
+                        continue;
+                    }
+
+                    u32 repeats = 0;
+                    u32 repeated_value;
+                    switch(decoded) {
+                    case(16): {
+                        repeats = StreamReadBits(stream, 2) + 3;
+                        repeated_value = HLITHDISTLengths[index - 1];
+
+                    } break;
+                    case(17): {
+                        repeats = StreamReadBits(stream, 3) + 3;
+                        repeated_value = 0;
+                    } break;
+                    case(18): {
+                        repeats = StreamReadBits(stream, 7) + 11;
+                        repeated_value = 0;
+                    } break;
+                    }
+                    ASSERT(repeats + index < HLIT + HDIST);
+                    for(u32 i = 0; i < repeats; ++i) {
+                        HLITHDISTLengths[index] = repeated_value;
+                        index++;
+                        ASSERT(index < HLIT + HDIST);
+                    }
+                }
+
+                litlen_table = sCalloc(HLIT, sizeof(u32));
+                distance_table = sCalloc(HDIST, sizeof(u32));
+                HuffmanCompute(HLIT, HLITHDISTLengths, litlen_table);
+                HuffmanCompute(HDIST, HLITHDISTLengths + HLIT, distance_table);
+            } else if(btype == 1) {
+            }
+
+            u32 iter = 0;
+            for(;;) {
+                //sTrace("%d", iter);
+                iter++;
+                u32 length_code = HuffmanDecode(stream, litlen_table, HLITHDISTLengths, HLIT);
+
+                if(length_code <= 255) {
+                    *out_ptr = (u8)(length_code & 0xFF);
+                    out_ptr++;
+                    bytes++;
+                    continue;
+                } else if(length_code == 256) {
+                    sTrace("End Ok");
+                    break;
+                } else {
+                    u32 length = FIXED_LENGTH_TABLE[length_code - 257];
+                    u32 length_extra_bits = LENGTH_EXTRA_BITS[length_code - 257];
+
+                    if(length_extra_bits > 0) {
+                        //u32 temp = StreamReadBits(stream, length_extra_bits);
+                        //u32 add = swap_bits(temp, length_extra_bits);
+                        //length += add;
+                        length += StreamReadBits(stream, length_extra_bits);
+                    }
+                    // ! This could be backwards : "The extra bits should be interpreted as a machine integer stored with the -significant bit first, e.g., bits 1110 represent the value 14.
+
+                    u32 distance_code =
+                        HuffmanDecode(stream, distance_table, HLITHDISTLengths + HLIT, HDIST);
+                    ASSERT(distance_code < 30);
+
+                    u32 distance = FIXED_DISTANCE_TABLE[distance_code];
+                    u32 dist_extra_bits = DIST_EXTRA_BITS[distance_code];
+                    if(dist_extra_bits > 0) {
+                        //u32 temp =StreamReadBits(stream, dist_extra_bits);
+                        //u32 add = swap_bits(temp, dist_extra_bits); // This could be backwards
+                        distance += StreamReadBits(stream, dist_extra_bits);
+                    }
+
+                    u8 *head = out_ptr - (distance);
+                    ASSERT(head >= dbg_start);
+                    ASSERT(out_ptr + length <= dbg_end);
+                    ASSERT(head + length <= dbg_end);
+                    while(length--) {
+                        *out_ptr++ = *head++;
+                        bytes++;
+                    }
+                }
+            }
+        }
+    } while(bfinal == 0);
+    ASSERT(out_ptr == dbg_end);
+}
+
+void PNGDefilter(PNG_Image *image, u8 *decompressed_image) {
+    u8 *line = decompressed_image;
+    u32 width_in_bytes = image->width * image->bpp;
+    u32 current_line = 0;
+    u8 *out_ptr = (u8 *)image->pixels;
+    while(current_line < image->height) {
+        u8 *in_ptr = line;
+        u8 filter = *(in_ptr++);
+        switch(filter) {
+        case(0): { // No filter
+            for(u32 i = 0; i < image->width; ++i) {
+                *out_ptr++ = *in_ptr++;
+            }
+        } break;
+        case(1): { // Sub
+            u32 a = 0;
+            for(u32 i = 0; i < image->width; i += 4) {
+                // Fun times
+                out_ptr[0] = in_ptr[0] + ((u8 *)&a)[0];
+                out_ptr[1] = in_ptr[1] + ((u8 *)&a)[1];
+                out_ptr[2] = in_ptr[2] + ((u8 *)&a)[2];
+                out_ptr[3] = image->bpp == 4 ? in_ptr[3] + ((u8 *)&a)[3] : 0;
+
+                a = *(u32 *)out_ptr;
+                out_ptr += 4;
+                in_ptr += image->bpp;
+            }
+        } break;
+        case(2): { // Up
+            for(u32 i = 0; i < image->width; ++i) {
+                u8 b = 0;
+                if(current_line != 0)
+                    b = *(out_ptr - image->width);
+                *out_ptr++ = *in_ptr + b;
+                in_ptr++;
+            }
+        } break;
+        case(3): { // Avg
+
+        } break;
+        case(4): { // Paeth
+
+        } break;
+        }
+        current_line++;
+        line += width_in_bytes;
+    }
+}
+
 void sLoadImage(const char *path, PNG_Image *image) {
     // Check extension
     u32 length = strlen(path);
@@ -347,194 +641,29 @@ void sLoadImage(const char *path, PNG_Image *image) {
     fread(header, sizeof(u8), 8, file);
 
     PNG_DataStream stream = {0};
-
-    // Parse
-    for(;;) {
-        sTrace("----");
-        PNG_Packet packet = {};
-        PNGReadPacket(file, &packet);
-
-        if(packet.type == PNG_TYPE_IEND)
-            break;
-
-        switch(packet.type) {
-        case PNG_TYPE_IHDR: {
-            PNG_IHDR hdr = {};
-            memcpy(&hdr, packet.data, sizeof(PNG_IHDR));
-
-            if(hdr.interlaced == 1) {
-                sError("Image is interlaced, this isn't supported yet");
-                return;
-            }
-
-            if(hdr.color_type != 2) {
-                sError("Image isn't RGB, this isn't supported yet");
-                return;
-            }
-            if(hdr.filter != 0) {
-                sError("Filters are unsupported yet");
-                return;
-            }
-
-            image->width = swap_u32(hdr.width);
-            image->height = swap_u32(hdr.height);
-
-            switch(hdr.color_type) {
-            //case(0): image->bpp = hdr.bit_depth; break;
-            case(2): image->bpp = (hdr.bit_depth * 3) / 8; break;
-            //case(3): image->bpp = hdr.bit_depth ; break;
-            case(4): image->bpp = (hdr.bit_depth * 2) / 8; break; // Grayscale + Alpha
-            case(6): image->bpp = (hdr.bit_depth * 4) / 8; break; // RGB + Alpha
-            }
-
-            image->size = image->width * image->height * image->bpp;
-            image->pixels = sMalloc(image->size);
-            sTrace("%dx%d (%dbpp)", image->width, image->height, image->bpp);
-        } break;
-        case PNG_TYPE_IDAT: {
-            // https://www.ietf.org/rfc/rfc1950.txt
-
-            PNG_DataChunk *chunk = sMalloc(sizeof(PNG_DataChunk));
-
-            chunk->data = packet.data;
-            chunk->size = packet.length;
-
-            StreamAppendChunk(&stream, chunk);
-
-        } break;
-        default: {
-            sTrace("PNG : Skipping packet");
-            continue;
-        }
-        }
-    }
+    bool result = PNGParse(file, &stream, image);
     fclose(file);
 
+    image->pixels = sMalloc(image->width * image->height * 4); //RGBA always
+
+    if(!result) {
+        sError("Error parsing PNG.");
+        return;
+    }
+
+    u32 decompressed_image_size = image->width * image->height * image->bpp + image->height;
+    u8 *decompressed_image = sMalloc(decompressed_image_size);
+    u8 *decompressed_end = decompressed_image + decompressed_image_size;
     sTrace("PNG : Decode");
+    PNGDecode(&stream, decompressed_image, decompressed_end);
+    sTrace("PNG : Decoded");
 
-    // Copy
-    // https://www.ietf.org/rfc/rfc1951.txt
-    u8 *out_ptr = image->pixels;
-    bool bfinal = 0;
-    do {
-        PNG_IDAT idat = {};
-        idat.cm = StreamReadBits(&stream, 4);
-        idat.cinfo = StreamReadBits(&stream, 4);
-        idat.fcheck = StreamReadBits(&stream, 5);
-        idat.fdict = StreamReadBits(&stream, 1);
-        idat.flevel = StreamReadBits(&stream, 2);
+    // Defilter
+    sTrace("PNG : Filtering");
+    PNGDefilter(image, decompressed_image);
+    sTrace("PNG : Filtered");
 
-        sTrace("CM : %d", idat.cm, idat.cinfo);
-
-        if(idat.fdict) {
-            sError("ADLER32 in this stream, this isn't handled.");
-        }
-
-        bfinal = StreamReadBits(&stream, 1);
-
-        u8 btype = StreamReadBits(&stream, 2);
-        StreamFlushBits(&stream);
-        if(btype == 0) { // Uncompressed
-            u32 len = *StreamRead(&stream, u32);
-            u32 nlen = *StreamRead(&stream, u32);
-        } else {
-            if(btype == 2) { // Dynamic Huffman tree
-                // TODO read the huffman tree
-                u32 HLIT = StreamReadBits(&stream, 5);
-                u32 HDIST = StreamReadBits(&stream, 5);
-                u32 HCLEN = StreamReadBits(&stream, 4);
-
-                HLIT += 257;
-                HDIST += 1;
-                HCLEN += 4;
-
-                ASSERT(HCLEN < 19);
-                u32 HCLENLengthTable[19] = {};
-                const u32 HCLENSwizzle[] = {
-                    16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
-
-                for(u32 i = 0; i < HCLEN; i++) {
-                    u32 value = StreamReadBits(&stream, 3);
-                    HCLENLengthTable[HCLENSwizzle[i]] = value;
-                }
-                sTrace("dkdk");
-            } else if(btype == 1) {
-            }
-
-            const u32 FIXED_LENGTH_TABLE[] = {3,  4,  5,  6,   7,   8,   9,   10,  11, 13,
-                                              15, 17, 19, 23,  27,  31,  35,  43,  51, 59,
-                                              67, 83, 99, 115, 131, 163, 195, 227, 258};
-            const u32 FIXED_DISTANCE_TABLE[] = {1,    2,    3,    4,     5,     7,    9,    13,
-                                                17,   25,   33,   49,    65,    97,   129,  193,
-                                                257,  385,  513,  769,   1025,  1537, 2049, 3073,
-                                                4097, 6145, 8193, 12289, 16385, 24577};
-            {
-                u32 code = StreamReadBits(&stream, 9);
-                u32 length = 0;
-                if(code <= 255) {
-                    length = code;
-                } else if(code == 256) {
-                    // End
-                } else {
-                    length = FIXED_LENGTH_TABLE[code - 257];
-
-                    u32 extra_bits = 0;
-                    // TODO optimize a modulo could work here
-                    if(code >= 265 && code <= 268) {
-                        extra_bits = 1;
-                    } else if(code >= 269 && code <= 272) {
-                        extra_bits = 2;
-                    } else if(code >= 273 && code <= 276) {
-                        extra_bits = 3;
-                    } else if(code >= 277 && code <= 280) {
-                        extra_bits = 4;
-                    } else if(code >= 281 && code <= 284) {
-                        extra_bits = 5;
-                    } else if(code == 285) {
-                        extra_bits = 0;
-                    }
-                    length += StreamReadBits(&stream, extra_bits);
-                    // ! This could be backwards : "The extra bits should be interpreted as a machine integer stored with the -significant bit first, e.g., bits 1110 represent the value 14.
-                }
-            }
-            {
-                u32 code = StreamReadBits(&stream, 5);
-                u32 extra_bits = 0;
-                if(code >= 4) {
-                    extra_bits = ((code - 4) % 2) + ((code - 4) / 2);
-                }
-                u32 distance = FIXED_DISTANCE_TABLE[code];
-                distance += StreamReadBits(&stream, extra_bits); // This could be backwards
-            }
-            /*
-            for(;;) {
-                u32 code = Read(head);
-                if(code == 256)
-                    break; // Loop
-                else if(code < 256) {
-                    // Copy
-                    *out_ptr = code;
-                    out_ptr++;
-                } else {
-                    // Read size
-                    u32 distance = Read();
-                    u8 *read_ptr = out_ptr - distance;
-                    for(u32 c = 0; c < code; c++) {
-                        *out_ptr = *read_ptr;
-                        out_ptr++;
-                        read_ptr++;
-                    }
-                }
-            }
-            */
-        }
-    } while(bfinal == 0);
-
-    // TODO : Consolidate data
-    // Gather all sizes
-    // Alloc a buffer big enough
-    // Memcpy all of it
-    // Free the chunks
+    sFree(decompressed_image);
 
     sTrace("PNG : End");
     return;
