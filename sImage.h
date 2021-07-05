@@ -572,7 +572,7 @@ void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
 // https://www.w3.org/TR/2003/REC-PNG-20031110/#9Filters
 void PNGDefilter(PNG_Image *image, u8 *decompressed_image) {
     u8 *line = decompressed_image;
-    u32 width_in_bytes = image->width * image->bpp;
+    u32 width_in_bytes = image->width * image->bpp + 1;
     u32 current_line = 0;
     u8 *out_ptr = (u8 *)image->pixels;
     while(current_line < image->height) {
@@ -580,18 +580,24 @@ void PNGDefilter(PNG_Image *image, u8 *decompressed_image) {
         u8 filter = *(in_ptr++);
         switch(filter) {
         case(0): { // No filter
-            for(u32 i = 0; i < image->width; ++i) {
-                *out_ptr++ = *in_ptr++;
+            for(u32 i = 0; i < image->width; i++) {
+                out_ptr[0] = in_ptr[0];
+                out_ptr[1] = in_ptr[1];
+                out_ptr[2] = in_ptr[2];
+                out_ptr[3] = image->bpp == 4 ? in_ptr[3] : 0xFF;
+                out_ptr += 4;
+                in_ptr += image->bpp;
             }
+
         } break;
         case(1): { // Sub
             u32 a = 0;
-            for(u32 i = 0; i < image->width; i += 4) {
+            for(u32 i = 0; i < image->width; i++) {
                 // Fun times
                 out_ptr[0] = in_ptr[0] + ((u8 *)&a)[0];
                 out_ptr[1] = in_ptr[1] + ((u8 *)&a)[1];
                 out_ptr[2] = in_ptr[2] + ((u8 *)&a)[2];
-                out_ptr[3] = image->bpp == 4 ? in_ptr[3] + ((u8 *)&a)[3] : 0;
+                out_ptr[3] = image->bpp == 4 ? in_ptr[3] + ((u8 *)&a)[3] : 0xFF;
 
                 a = *(u32 *)out_ptr;
                 out_ptr += 4;
@@ -607,13 +613,15 @@ void PNGDefilter(PNG_Image *image, u8 *decompressed_image) {
         case(4): { // Paeth
             ASSERT_MSG(0, "I am not implemented!");
         } break;
+        default: ASSERT_MSG(0, "Unknown filter type encountered");
         }
         current_line++;
         line += width_in_bytes;
     }
 }
 
-bool sLoadImage(const char *path, PNG_Image *image) {
+PNG_Image *sLoadImage(const char *path) {
+    PNG_Image *image = sMalloc(sizeof(PNG_Image));
     // Check extension
     u32 length = strlen(path);
     u32 fmt_index = length - 3;
@@ -637,7 +645,8 @@ bool sLoadImage(const char *path, PNG_Image *image) {
 
     if(!result) {
         sError("Error parsing PNG.");
-        return false;
+        sFree(image);
+        return 0;
     }
 
     image->pixels = sMalloc(image->width * image->height * 4); //RGBA always
@@ -670,7 +679,12 @@ bool sLoadImage(const char *path, PNG_Image *image) {
     // TODO Free the datachunks
 
     sTrace("PNG : End");
-    return true;
+    return image;
+}
+
+void sDestroyImage(PNG_Image *image) {
+    sFree(image->pixels);
+    sFree(image);
 }
 
 #endif
