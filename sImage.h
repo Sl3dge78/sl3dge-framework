@@ -111,9 +111,12 @@ void *StreamReadSize(PNG_DataStream *stream, u32 size) {
             stream->contents_size -= size;
             break;
         } else if((stream->contents_size == 0) && stream->first) {
+            PNG_DataChunk *old = stream->first;
             stream->first = stream->first->next;
             stream->contents_size = stream->first->size;
             stream->contents = stream->first->data;
+            sFree(old->data);
+            sFree(old);
         } else {
             break;
         }
@@ -282,6 +285,8 @@ void HuffmanCompute(const u32 size, const u32 *lengths, u32 *huffman_table) {
             huffman_table[i] = length_values[lengths[i]]++;
         }
     }
+    sFree(length_values);
+    sFree(length_counts);
 }
 
 u32 HuffmanDecode(PNG_DataStream *stream, const u32 *codes, const u32 *lengths, const u32 size) {
@@ -350,20 +355,11 @@ void PNGReadPacket(FILE *file, PNG_Packet *packet) {
         sWarn("PNG : Type %s (unhandled)", str);
     }
 
-    // TODO maybe we don't need to allocate and copy here ?
     packet->data = sMalloc(packet->length * sizeof(u8));
     fread(packet->data, sizeof(u8), packet->length, file);
-    /*
-    sTrace("PNG : Packet data");
-    for(u32 i = 0; i < packet->length; ++i) {
-        srTrace("%0.2X", packet->data[i]);
-    }
-    srTrace("\n");
-    */
 
     // CRC
     fread(&packet->crc, sizeof(u32), 1, file);
-    //sTrace("PNG : CRC : %d", packet->crc);
 }
 
 bool PNGParse(FILE *file, PNG_DataStream *stream, PNG_Image *image) {
@@ -372,8 +368,10 @@ bool PNGParse(FILE *file, PNG_DataStream *stream, PNG_Image *image) {
         PNG_Packet packet = {};
         PNGReadPacket(file, &packet);
 
-        if(packet.type == PNG_TYPE_IEND)
+        if(packet.type == PNG_TYPE_IEND) {
+            sFree(packet.data);
             break;
+        }
 
         switch(packet.type) {
         case PNG_TYPE_IHDR: {
@@ -386,11 +384,11 @@ bool PNGParse(FILE *file, PNG_DataStream *stream, PNG_Image *image) {
             }
 
             if(hdr.color_type != 2 && hdr.color_type != 6) {
-                sError("Image isn't RGB or ARGB, this isn't supported yet");
+                sError("Image isn't RGB or RGBA, this isn't supported yet");
                 return false;
             }
             if(hdr.filter != 0) {
-                sError("Filters are unsupported yet");
+                sError("Filter type of 1 found. This isn't standard");
                 return false;
             }
 
@@ -408,20 +406,19 @@ bool PNGParse(FILE *file, PNG_DataStream *stream, PNG_Image *image) {
             image->size = image->width * image->height * image->bpp;
 
             sTrace("%dx%d (%dbpp)", image->width, image->height, image->bpp);
+            sFree(packet.data);
         } break;
         case PNG_TYPE_IDAT: {
-            // https://www.ietf.org/rfc/rfc1950.txt
-
             PNG_DataChunk *chunk = sMalloc(sizeof(PNG_DataChunk));
-
+            chunk->next = 0;
             chunk->data = packet.data;
             chunk->size = packet.length;
 
             StreamAppendChunk(stream, chunk);
-
         } break;
         default: {
             sTrace("PNG : Skipping packet");
+            sFree(packet.data);
             continue;
         }
         }
@@ -456,12 +453,13 @@ void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
             u32 len = *StreamRead(stream, u32);
             u32 nlen = *StreamRead(stream, u32);
             // TODO
+            ASSERT_MSG(0, "I am not implemented");
         } else {
-            u32 *litlen_table;
-            u32 *distance_table;
-            u32 *HLITHDISTLengths;
-            u32 HDIST;
-            u32 HLIT;
+            u32 *litlen_table = 0;
+            u32 *distance_table = 0;
+            u32 *HLITHDISTLengths = 0;
+            u32 HDIST = 0;
+            u32 HLIT = 0;
             if(btype == 2) { // Dynamic Huffman tree
                 HLIT = StreamReadBits(stream, 5) + 257;
                 HDIST = StreamReadBits(stream, 5) + 1;
@@ -517,6 +515,7 @@ void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
                 distance_table = sCalloc(HDIST, sizeof(u32));
                 HuffmanCompute(HLIT, HLITHDISTLengths, litlen_table);
                 HuffmanCompute(HDIST, HLITHDISTLengths + HLIT, distance_table);
+                sFree(HCLENCodes);
             } else if(btype == 1) {
             }
 
@@ -539,12 +538,8 @@ void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
                     u32 length_extra_bits = LENGTH_EXTRA_BITS[length_code - 257];
 
                     if(length_extra_bits > 0) {
-                        //u32 temp = StreamReadBits(stream, length_extra_bits);
-                        //u32 add = swap_bits(temp, length_extra_bits);
-                        //length += add;
                         length += StreamReadBits(stream, length_extra_bits);
                     }
-                    // ! This could be backwards : "The extra bits should be interpreted as a machine integer stored with the -significant bit first, e.g., bits 1110 represent the value 14.
 
                     u32 distance_code =
                         HuffmanDecode(stream, distance_table, HLITHDISTLengths + HLIT, HDIST);
@@ -553,8 +548,6 @@ void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
                     u32 distance = FIXED_DISTANCE_TABLE[distance_code];
                     u32 dist_extra_bits = DIST_EXTRA_BITS[distance_code];
                     if(dist_extra_bits > 0) {
-                        //u32 temp =StreamReadBits(stream, dist_extra_bits);
-                        //u32 add = swap_bits(temp, dist_extra_bits); // This could be backwards
                         distance += StreamReadBits(stream, dist_extra_bits);
                     }
 
@@ -568,11 +561,15 @@ void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
                     }
                 }
             }
+            sFree(litlen_table);
+            sFree(distance_table);
+            sFree(HLITHDISTLengths);
         }
     } while(bfinal == 0);
     ASSERT(out_ptr == dbg_end);
 }
 
+// https://www.w3.org/TR/2003/REC-PNG-20031110/#9Filters
 void PNGDefilter(PNG_Image *image, u8 *decompressed_image) {
     u8 *line = decompressed_image;
     u32 width_in_bytes = image->width * image->bpp;
@@ -602,19 +599,13 @@ void PNGDefilter(PNG_Image *image, u8 *decompressed_image) {
             }
         } break;
         case(2): { // Up
-            for(u32 i = 0; i < image->width; ++i) {
-                u8 b = 0;
-                if(current_line != 0)
-                    b = *(out_ptr - image->width);
-                *out_ptr++ = *in_ptr + b;
-                in_ptr++;
-            }
+            ASSERT_MSG(0, "I am not implemented!");
         } break;
         case(3): { // Avg
-
+            ASSERT_MSG(0, "I am not implemented!");
         } break;
         case(4): { // Paeth
-
+            ASSERT_MSG(0, "I am not implemented!");
         } break;
         }
         current_line++;
@@ -622,7 +613,7 @@ void PNGDefilter(PNG_Image *image, u8 *decompressed_image) {
     }
 }
 
-void sLoadImage(const char *path, PNG_Image *image) {
+bool sLoadImage(const char *path, PNG_Image *image) {
     // Check extension
     u32 length = strlen(path);
     u32 fmt_index = length - 3;
@@ -631,7 +622,7 @@ void sLoadImage(const char *path, PNG_Image *image) {
     extension[3] = '\0';
     if(strcmp(extension, "png") != 0 && strcmp(extension, "PNG") != 0) {
         sError("Error : Unsupported image format %s", extension);
-        return;
+        return false;
     }
 
     sTrace("PNG : Begin");
@@ -644,12 +635,12 @@ void sLoadImage(const char *path, PNG_Image *image) {
     bool result = PNGParse(file, &stream, image);
     fclose(file);
 
-    image->pixels = sMalloc(image->width * image->height * 4); //RGBA always
-
     if(!result) {
         sError("Error parsing PNG.");
-        return;
+        return false;
     }
+
+    image->pixels = sMalloc(image->width * image->height * 4); //RGBA always
 
     u32 decompressed_image_size = image->width * image->height * image->bpp + image->height;
     u8 *decompressed_image = sMalloc(decompressed_image_size);
@@ -658,15 +649,28 @@ void sLoadImage(const char *path, PNG_Image *image) {
     PNGDecode(&stream, decompressed_image, decompressed_end);
     sTrace("PNG : Decoded");
 
+    for(;;) {
+        PNG_DataChunk *old = stream.first;
+        if(!old)
+            break;
+        stream.first = old->next;
+        sFree(old->data);
+        sFree(old);
+    }
+
     // Defilter
     sTrace("PNG : Filtering");
     PNGDefilter(image, decompressed_image);
     sTrace("PNG : Filtered");
+    image->bpp = 4;
+    image->size = image->width * image->height * image->bpp;
 
     sFree(decompressed_image);
 
+    // TODO Free the datachunks
+
     sTrace("PNG : End");
-    return;
+    return true;
 }
 
 #endif

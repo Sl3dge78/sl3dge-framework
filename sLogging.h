@@ -35,11 +35,12 @@
         (byte & 0x02 ? '1' : '0'), (byte & 0x01 ? '1' : '0')
 
 enum LogLevel {
-    LOG_LEVEL_NONE = 0,
+
     LOG_LEVEL_TRACE,
     LOG_LEVEL_LOG,
     LOG_LEVEL_WARN,
-    LOG_LEVEL_ERROR
+    LOG_LEVEL_ERROR,
+    LOG_LEVEL_NONE = LOG_LEVEL_LOG,
 };
 enum LogColor { LOG_COLOR_WHITE, LOG_COLOR_RED, LOG_COLOR_YELLOW, LOG_COLOR_GREY, LOG_COLOR_GREEN };
 
@@ -51,7 +52,6 @@ global PFN_LogCallback callback = &DefaultLog;
 
 void DefaultLog(const char *message, const u8 level) {
     switch(level) {
-    case LOG_LEVEL_NONE: break;
     case LOG_LEVEL_ERROR: printf("\033[0;31m"); break;
     case LOG_LEVEL_WARN: printf("\033[0;33m"); break;
     case LOG_LEVEL_LOG: printf("\033[0m"); break;
