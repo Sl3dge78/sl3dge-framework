@@ -1,7 +1,10 @@
+#ifndef SLINKEDLIST_H
+#define SLINKEDLIST_H
+
 #include <string.h>
 
-#include "types.h"
-#include "debug.h"
+#include "sTypes.h"
+#include "sDebug.h"
 
 #define ARRAY_INIT_SIZE 10
 
@@ -12,7 +15,7 @@ struct u32Vector {
 };
 
 void u32vector_init(u32Vector *v, u32 init_size) {
-    v->buffer = (u32 *)smalloc(sizeof(u32) * init_size);
+    v->buffer = (u32 *)sMalloc(sizeof(u32) * init_size);
     v->count = 0;
     v->capacity = init_size;
 }
@@ -64,7 +67,7 @@ internal void lldeleteitem(ListItem *item) {
 }
 
 void llpushback(List *ll, void *object, size_t size) {
-    ListItem *item = (ListItem *)smalloc(sizeof(ListItem));
+    ListItem *item = (ListItem *)sMalloc(sizeof(ListItem));
     //item->data = malloc(size);
     //memcpy(ll->head, object, size);
     item->data = object;
@@ -112,3 +115,5 @@ void llclear(List *ll) {
         i = n;
     }
 }
+
+#endif

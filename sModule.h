@@ -1,7 +1,5 @@
-/* date = June 12th 2021 11:28 am */
-
-#ifndef SL_MODULE_H
-#define SL_MODULE_H
+#ifndef SMODULE_H
+#define SMODULE_H
 
 #include <windows.h>
 #include "types.h"
@@ -57,26 +55,26 @@ internal bool Win32ShouldReloadModule(Module *module) {
 }
 
 internal bool Win32LoadModule(Module *module, const char *name) {
-    SDL_Log("Loading module %s", name);
+    sLog("Loading module %s", name);
 
     u32 name_length = strlen(name);
     const char *path = "bin\\";
     const u32 path_length = strlen(path);
 
-    strcpy_s(module->meta_path, "");
-    strcat_s(module->meta_path, path);
-    strcat_s(module->meta_path, name);
-    strcat_s(module->meta_path, ".meta");
+    strcpy_s(module->meta_path, ARRAY_SIZE(module->meta_path), "");
+    strcat_s(module->meta_path, ARRAY_SIZE(module->meta_path), path);
+    strcat_s(module->meta_path, ARRAY_SIZE(module->meta_path), name);
+    strcat_s(module->meta_path, ARRAY_SIZE(module->meta_path), ".meta");
 
     char orig_dll[64] = {};
-    strcat_s(orig_dll, path);
-    strcat_s(orig_dll, name);
-    strcat_s(orig_dll, ".dll");
+    strcat_s(orig_dll, ARRAY_SIZE(orig_dll), path);
+    strcat_s(orig_dll, ARRAY_SIZE(orig_dll), name);
+    strcat_s(orig_dll, ARRAY_SIZE(orig_dll), ".dll");
 
-    strcpy_s(module->tmp_dll, "");
-    strcat_s(module->tmp_dll, path);
-    strcat_s(module->tmp_dll, name);
-    strcat_s(module->tmp_dll, "_temp.dll");
+    strcpy_s(module->tmp_dll, ARRAY_SIZE(module->tmp_dll), "");
+    strcat_s(module->tmp_dll, ARRAY_SIZE(module->tmp_dll), path);
+    strcat_s(module->tmp_dll, ARRAY_SIZE(module->tmp_dll), name);
+    strcat_s(module->tmp_dll, ARRAY_SIZE(module->tmp_dll), "_temp.dll");
 
     // Copy the .dll to the new _temp.dll to allow writing by the compiler, only
     // if it exists. CopyFile deletes the destination even on failure, so do the
@@ -88,22 +86,22 @@ internal bool Win32LoadModule(Module *module, const char *name) {
         DeleteFile(module->tmp_dll);
         if(!CopyFile(orig_dll, module->tmp_dll, FALSE)) {
             DWORD dw = GetLastError();
-            SDL_LogError(0, "Error copying module %s, %d", name, dw);
+            sError("Error copying module %s, %d", name, dw);
         }
     } else {
-        SDL_LogWarn(0, "%s.dll doesn't exist, reloading the previous module.", name);
+        sWarn("%s.dll doesn't exist, reloading the previous module.", name);
     }
 
     module->dll = LoadLibrary(module->tmp_dll);
 
     if(!module->dll) {
-        SDL_LogError(0, "Unable to load module %s", name);
+        sError("Unable to load module %s", name);
         return false;
     }
 
     module->last_write_time = Win32GetLastWriteTime(module->meta_path);
 
-    SDL_Log("Module loaded : %s", name);
+    sLog("Module loaded : %s", name);
     return true;
 }
 

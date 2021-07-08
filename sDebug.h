@@ -1,10 +1,12 @@
-#ifndef SL_DEBUG_H
-#define SL_DEBUG_H
+#ifndef SDEBUG_H
+#define SDEBUG_H
 
 #include <stdio.h>
-#include "types.h"
 
-#if DEBUG
+#include "sTypes.h"
+#include "sLogging.h"
+
+#if defined(DEBUG)
 
 #define ASSERT(expression)                                                                         \
     if(!(expression)) {                                                                            \
@@ -12,7 +14,7 @@
     }
 #define ASSERT_MSG(expression, msg)                                                                \
     if(!(expression)) {                                                                            \
-        SDL_LogError(0, msg);                                                                      \
+        sError(msg);                                                                               \
         __builtin_trap();                                                                          \
     }
 
@@ -23,7 +25,7 @@
 
 #define HANG_MSG(expression, msg)                                                                  \
     if(!(expression))                                                                              \
-        SDL_LogError(0, msg);                                                                      \
+        sError(msg);                                                                               \
     while(1)                                                                                       \
         ;
 
@@ -140,12 +142,11 @@ void DBG_free(void *ptr) {
 bool DBG_DumpMemoryLeaks() {
     int count = 0;
     for(MemoryLeak *leak = array_start; leak != NULL; leak = leak->next) {
-        SDL_LogError(0,
-                     "Memory leak found - Address: %p | Size: %06d | Last alloc: %s:%d",
-                     leak->info.ptr,
-                     (u64)leak->info.size,
-                     leak->info.file,
-                     leak->info.line);
+        sError("Memory leak found - Address: %p | Size: %06d | Last alloc: %s:%d",
+               leak->info.ptr,
+               (u64)leak->info.size,
+               leak->info.file,
+               leak->info.line);
         count++;
     }
     clear_array();
@@ -161,15 +162,15 @@ void PerformEndChecks() {
     }
 }
 
-#define smalloc(size) DBG_malloc(size, __FILE__, __LINE__)
-#define scalloc(num, size) DBG_calloc(num, size, __FILE__, __LINE__)
-#define srealloc(ptr, size) DBG_realloc(ptr, size, __FILE__, __LINE__)
-#define sfree(ptr) DBG_free(ptr)
+#define sMalloc(size) DBG_malloc(size, __FILE__, __LINE__)
+#define sCalloc(num, size) DBG_calloc(num, size, __FILE__, __LINE__)
+#define sRealloc(ptr, size) DBG_realloc(ptr, size, __FILE__, __LINE__)
+#define sFree(ptr) DBG_free(ptr)
 
 #else // #if DEBUG
 
 #define ASSERT(expression)
-#define ASSERT(expression, msg)
+#define ASSERT_MSG(expression, msg)
 #define HANG(expression)
 #define HANG_MSG(expression, msg)
 #define KEEP_CONSOLE_OPEN(value)

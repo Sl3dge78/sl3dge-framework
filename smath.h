@@ -1,24 +1,12 @@
-#ifndef SL_MATH_H
-#define SL_MATH_H
+#ifndef SMATH_H
+#define SMATH_H
 
 #include <math.h>
+#include <stdalign.h>
 
-#include "types.h"
-/*
-=== TODO ===
+#include "sTypes.h"
+#include "sLogging.h"
 
- CRITICAL
-- Cleanup function calls
-
- MAJOR
-
- BACKLOG
-
- IMPROVEMENTS
-
-IDEAS
-
-*/
 #define PI 3.1415926535897932384626433f
 #define MAX(x, y) x > y ? x : y
 
@@ -73,34 +61,25 @@ inline float radians(const float angle) {
     return angle / 180.f * PI;
 }
 
+u32 swap_u32(u32 val) {
+    u32 result = (val >> 8) & 0x0000FF00 | (val << 8) & 0x00FF0000 | (val >> 24) & 0x000000FF |
+                 (val << 24) & 0xFF000000;
+    return result;
+}
+u8 swap_u8(u8 val) {
+    u8 result = 0;
+    for(u8 i = 0; i < 8; ++i) {
+        result <<= 1;
+        u8 bit = val & (1 << i);
+        result |= (bit > 0);
+    }
+    return result;
+}
+
 // =====================================================
 
-Vec2f operator+(Vec2f l, const Vec2f r) {
-    l.x += r.x;
-    l.y += r.y;
-    return l;
-}
-
-Vec2f operator-(Vec2f l, const Vec2f r) {
-    l.x -= r.x;
-    l.y -= r.y;
-    return l;
-}
-
-Vec2f operator*(Vec2f l, const Vec2f r) {
-    l.x *= r.x;
-    l.y *= r.y;
-    return l;
-}
-
-Vec2f operator*(Vec2f l, f32 r) {
-    l.x *= r;
-    l.y *= r;
-    return l;
-}
-
 inline void vec2f_print(const Vec2f v) {
-    SDL_Log("%f, %f", v.x, v.y);
+    sLog("%f, %f", v.x, v.y);
 }
 
 inline float vec2f_length(const Vec2f v) {
@@ -114,11 +93,6 @@ void vec2f_normalize(Vec2f *v) {
     v->y /= length;
 }
 
-inline f32 vec2f_distance(const Vec2f a, const Vec2f b) {
-    Vec2f diff = a - b;
-    return vec2f_length(diff);
-}
-
 inline bool vec2f_in_circle(const Vec2f v, const Vec2f center, f32 radius) {
     return v.x > center.x - radius && v.x < center.x + radius && v.y > center.y - radius &&
            v.y < center.y + radius;
@@ -128,32 +102,22 @@ inline bool vec2f_in_rect(const Vec2f v, const Rect rect) {
     return (v.x > rect.x && v.y > rect.y && v.x < rect.w + rect.x && v.y < rect.h + rect.y);
 }
 
-// =====================================================
+inline Vec2f vec2_sub(const Vec2f r, const Vec2f l) {
+    Vec2f result = {r.x - l.x, r.y - l.y};
+    return result;
+}
 
-Vec3 operator+(Vec3 l, const Vec3 r) {
-    l.x += r.x;
-    l.y += r.y;
-    l.z += r.z;
-    return l;
-};
-Vec3 operator-(Vec3 l, const Vec3 r) {
-    l.x -= r.x;
-    l.y -= r.y;
-    l.z -= r.z;
-    return l;
-};
-Vec3 operator*(Vec3 l, const float r) {
-    l.x *= r;
-    l.y *= r;
-    l.z *= r;
-    return l;
-};
-Vec3 operator*(Vec3 l, const Vec3 r) {
-    l.x *= r.x;
-    l.y *= r.y;
-    l.z *= r.z;
-    return l;
-};
+inline void vec2_ssub(Vec2f *v, const Vec2f b) {
+    v->x -= b.x;
+    v->y -= b.y;
+}
+
+inline f32 vec2f_distance(const Vec2f a, const Vec2f b) {
+    Vec2f diff = vec2_sub(a, b);
+    return vec2f_length(diff);
+}
+
+// =====================================================
 
 /// Y up
 inline Vec3 spherical_to_carthesian(const Vec2f v) {
@@ -167,13 +131,17 @@ inline Vec3 spherical_to_carthesian(const Vec2f v) {
 }
 
 inline void vec3_print(const Vec3 *v) {
-    SDL_Log("%f, %f, %f", v->x, v->y, v->z);
+    sLog("%f, %f, %f", v->x, v->y, v->z);
 }
 
-void vec3_fmul(Vec3 *vec, const float mul) {
-    vec->x *= mul;
-    vec->y *= mul;
-    vec->z *= mul;
+Vec3 vec3_add(const Vec3 a, const Vec3 b) {
+    Vec3 result = {a.x + b.x, a.y + b.y, a.z + b.z};
+    return result;
+}
+
+Vec3 vec3_sub(const Vec3 a, const Vec3 b) {
+    Vec3 result = {a.x - b.x, a.y - b.y, a.z - b.z};
+    return result;
 }
 
 Vec3 vec3_fmul(const Vec3 vec, const float mul) {
@@ -186,9 +154,14 @@ Vec3 vec3_fmul(const Vec3 vec, const float mul) {
     return (result);
 }
 
+f32 vec3_length(const Vec3 v) {
+    return sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
+}
+
 Vec3 vec3_normalize(const Vec3 v) {
-    float length = sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
-    return Vec3{v.x / length, v.y / length, v.z / length};
+    f32 length = vec3_length(v);
+    Vec3 result = {v.x / length, v.y / length, v.z / length};
+    return result;
 }
 
 Vec3 vec3_cross(const Vec3 a, const Vec3 b) {
@@ -208,24 +181,24 @@ float vec3_dot(const Vec3 a, const Vec3 b) {
 // =====================================================
 
 void mat4_print(const Mat4 *mat) {
-    SDL_Log("\n%#.3f, %#.3f, %#.3f, %#.3f\n%#.3f, %#.3f, %#.3f, %#.3f\n%#.3f, "
-            "%#.3f, %#.3f, %#.3f\n%#.3f, %#.3f, %#.3f, %#.3f",
-            mat->v[0],
-            mat->v[1],
-            mat->v[2],
-            mat->v[3],
-            mat->v[4],
-            mat->v[5],
-            mat->v[6],
-            mat->v[7],
-            mat->v[8],
-            mat->v[9],
-            mat->v[10],
-            mat->v[11],
-            mat->v[12],
-            mat->v[13],
-            mat->v[14],
-            mat->v[15]);
+    sLog("\n%#.3f, %#.3f, %#.3f, %#.3f\n%#.3f, %#.3f, %#.3f, %#.3f\n%#.3f, "
+         "%#.3f, %#.3f, %#.3f\n%#.3f, %#.3f, %#.3f, %#.3f",
+         mat->v[0],
+         mat->v[1],
+         mat->v[2],
+         mat->v[3],
+         mat->v[4],
+         mat->v[5],
+         mat->v[6],
+         mat->v[7],
+         mat->v[8],
+         mat->v[9],
+         mat->v[10],
+         mat->v[11],
+         mat->v[12],
+         mat->v[13],
+         mat->v[14],
+         mat->v[15]);
 }
 
 Mat4 mat4_mul(const Mat4 *a, const Mat4 *b) {
@@ -243,24 +216,22 @@ Mat4 mat4_mul(const Mat4 *a, const Mat4 *b) {
 }
 
 const Mat4 mat4_identity() {
-    Mat4 result;
-
-    result = {1.0f,
-              0.0f,
-              0.0f,
-              0.0f,
-              0.0f,
-              1.0f,
-              0.0f,
-              0.0f,
-              0.0f,
-              0.0f,
-              1.0f,
-              0.0f,
-              0.0f,
-              0.0f,
-              0.0f,
-              1.0f};
+    Mat4 result = {1.0f,
+                   0.0f,
+                   0.0f,
+                   0.0f,
+                   0.0f,
+                   1.0f,
+                   0.0f,
+                   0.0f,
+                   0.0f,
+                   0.0f,
+                   1.0f,
+                   0.0f,
+                   0.0f,
+                   0.0f,
+                   0.0f,
+                   1.0f};
 
     return result;
 }
@@ -358,7 +329,6 @@ void mat4_rotate_x(Mat4 *mat, const float radians) {
     mat->m[3][3] = 1.0f;
 }
 
-// TODO: Maybe this doesn't work
 void mat4_rotate_y(Mat4 *mat, const float radians) {
     mat->m[0][0] = cos(radians);
     mat->m[0][2] = sin(radians);
@@ -404,7 +374,7 @@ void mat4_rotate_euler(Mat4 *mat, const Vec3 euler) {
 }
 
 Mat4 mat4_look_at(const Vec3 target, const Vec3 eye, const Vec3 up) {
-    Vec3 z_axis = vec3_normalize(eye - target);
+    Vec3 z_axis = vec3_normalize(vec3_sub(eye, target));
     Vec3 x_axis = vec3_normalize(vec3_cross(up, z_axis));
     Vec3 y_axis = vec3_cross(z_axis, x_axis);
 
@@ -541,7 +511,7 @@ void mat4_inverse(const Mat4 *m, Mat4 *out) {
     det = m->v[0] * inv.v[0] + m->v[1] * inv.v[4] + m->v[2] * inv.v[8] + m->v[3] * inv.v[12];
 
     if(det == 0) {
-        SDL_Log("Inverse of matrix doesn't exist");
+        sLog("Inverse of matrix doesn't exist");
         return;
     }
 

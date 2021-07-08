@@ -1,0 +1,33 @@
+
+sImage :
+    CRITICAL:
+        - Fix loading, it still doesn't work in some cases. (multiple idats, check for 1.png)
+        - Filter types 2 & 3 might not be working, test!
+    MAJOR:
+        - Clear the debug stuff
+            - in huffman decode we loop through every entry to check for dupes, this isn't necessary
+            - lengths checks
+    BACKLOG:
+        - Filter type 4
+        - Uncompressed image (btype == 0)
+        - Fixed table (btype == 1)
+    IMPROVEMENTS:
+        - Optimisations
+            - Find an alternative to bitwapping
+            - Improve the bitstream ?
+            - Remove empty entries in the tables
+            - HuffmanDecode : sort the table by size to avoid reading from the stream each loop
+            - Let's try using a profiler to see how they work.
+    IDEAS:
+
+
+sMath :
+    CRITICAL:
+
+    MAJOR:
+        - mat4_rotate_y : maybe doesn't work
+    BACKLOG:
+
+    IMPROVEMENTS:
+
+    IDEAS:
