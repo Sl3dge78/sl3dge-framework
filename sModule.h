@@ -2,7 +2,7 @@
 #define SMODULE_H
 
 #include <windows.h>
-#include "types.h"
+#include "sTypes.h"
 
 // SAMPLE
 /*
@@ -55,7 +55,7 @@ internal bool Win32ShouldReloadModule(Module *module) {
 }
 
 internal bool Win32LoadModule(Module *module, const char *name) {
-    sLog("Loading module %s", name);
+    sTrace("Loading module %s", name);
 
     u32 name_length = strlen(name);
     const char *path = "bin\\";
@@ -101,7 +101,7 @@ internal bool Win32LoadModule(Module *module, const char *name) {
 
     module->last_write_time = Win32GetLastWriteTime(module->meta_path);
 
-    sLog("Module loaded : %s", name);
+    sTrace("Module loaded : %s", name);
     return true;
 }
 
