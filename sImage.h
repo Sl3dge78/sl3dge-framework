@@ -687,7 +687,6 @@ bool sQueryImageSize(const char *path, u32 *w, u32 *h) {
     while(loop) {
         PNG_Packet packet = {};
         PNGReadPacket(file, &packet);
-
         switch(packet.type) {
         case PNG_TYPE_IHDR: {
             PNG_IHDR hdr = {};
