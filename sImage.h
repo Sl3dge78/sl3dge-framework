@@ -1,16 +1,6 @@
 /*
     == WARNING : THIS IS HIGHLY UNOPTIMIZED CODE ==
-
-    TODO :
-    -
-    -
-
-    - Bit swapping is dumb, find a better way
-    - The bit stream could probably be better too
-    - Remove empty entries in tables
-    - HuffmanDecode : maybe sort the tables by lengths so that we don't need to read through the bitstream everytime
-    - Let's try using a profiler on this to see how they work.
-
+    - For some reason, some images saved with paint don't work
 */
 
 #ifndef SIMAGE_H
@@ -98,14 +88,14 @@ const u32 FIXED_DISTANCE_TABLE[] = {1,    2,    3,    4,    5,    7,    9,    13
                                     33,   49,   65,   97,   129,  193,  257,  385,   513,   769,
                                     1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577};
 
-void StreamFlushBits(PNG_DataStream *stream) {
+internal void StreamFlushBits(PNG_DataStream *stream) {
     stream->bits_left = 0;
     stream->bit_buffer = 0;
 }
 
 #define StreamRead(stream, type) (type *)StreamReadSize(stream, sizeof(type))
 
-void *StreamReadSize(PNG_DataStream *stream, u32 size) {
+internal void *StreamReadSize(PNG_DataStream *stream, u32 size) {
     void *result = 0;
 
     for(;;) {
@@ -135,7 +125,7 @@ void *StreamReadSize(PNG_DataStream *stream, u32 size) {
 
 #define StreamPeek(stream, type) *(type *)StreamPeekSize(stream, typeof(type))
 
-void *StreamPeekSize(PNG_DataStream *stream, const u32 size) {
+internal void *StreamPeekSize(PNG_DataStream *stream, const u32 size) {
     void *result = 0;
     if(stream->contents_size > size) {
         result = stream->contents;
@@ -151,7 +141,7 @@ void *StreamPeekSize(PNG_DataStream *stream, const u32 size) {
     return result;
 }
 
-u32 StreamReadBits(PNG_DataStream *stream, const u8 count) {
+internal u32 StreamReadBits(PNG_DataStream *stream, const u8 count) {
     u32 result = 0;
     u8 bits_remaining = count;
 
@@ -166,31 +156,10 @@ u32 StreamReadBits(PNG_DataStream *stream, const u8 count) {
         result |= stream->bit_buffer & ((1 << count) - 1);
         stream->bit_buffer >>= count;
     }
-    /*
-    while(bits_remaining > 0) {
-        u8 bits_to_read = 0;
-        if(8 - stream->bits_left == 0) {
-            StreamFlushBits(stream);
-            continue;
-        }
-        if(8 - stream->bits_left < bits_remaining) {
-            bits_to_read = 8 - stream->bits_left;
-        } else {
-            bits_to_read = bits_remaining;
-        }
-
-        const u8 byte = *(u8 *)stream->contents >> (stream->bits_left);
-        const u8 mask = (1 << bits_to_read) - 1;
-
-        stream->bits_left += bits_to_read;
-        bits_remaining -= bits_to_read;
-        result = result << bits_remaining;
-    }
-    */
     return result;
 }
 
-void StreamAppendChunk(PNG_DataStream *stream, PNG_DataChunk *chunk) {
+internal void StreamAppendChunk(PNG_DataStream *stream, PNG_DataChunk *chunk) {
     if(!stream->first) {
         stream->first = chunk;
         stream->contents = chunk->data;
@@ -202,7 +171,7 @@ void StreamAppendChunk(PNG_DataStream *stream, PNG_DataChunk *chunk) {
     stream->last = chunk;
 }
 
-u32 swap_bits(const u32 in, const u8 bit_size) {
+internal u32 swap_bits(const u32 in, const u8 bit_size) {
     u32 swapped = 0;
     for(u8 i = 0; i < bit_size; ++i) {
         swapped <<= 1;
@@ -212,7 +181,7 @@ u32 swap_bits(const u32 in, const u8 bit_size) {
     return swapped;
 }
 
-u32 StreamPeekBitsSwapped(PNG_DataStream *stream, const u8 size) {
+internal u32 StreamPeekBitsSwapped(PNG_DataStream *stream, const u8 size) {
     u32 result = 0;
     while(stream->bits_left < size) {
         u8 *ptr = StreamRead(stream, u8);
@@ -232,17 +201,15 @@ u32 StreamPeekBitsSwapped(PNG_DataStream *stream, const u8 size) {
 
 // Goes through the input array, and writes the amount of occurences of the lengths at index length.
 // If there are three 4 size codes in the input, output[4] will be set to 3
-void HuffmanGetLengthCounts(const u32 input_size,
-                            const u32 *input,
-                            const u32 output_size,
-                            u32 *output) {
+internal void
+HuffmanGetLengthCounts(const u32 input_size, const u32 *input, const u32 output_size, u32 *output) {
     for(u32 i = 0; i < input_size; ++i) {
         output[input[i]]++;
     }
 }
 
 // Returns the maximum value of the array given
-u32 HuffmanGetMaxLength(const u32 array_size, const u32 *array) {
+internal u32 HuffmanGetMaxLength(const u32 array_size, const u32 *array) {
     u32 result = 0;
     for(u32 i = 0; i < array_size; ++i) {
         if(result < array[i])
@@ -252,24 +219,23 @@ u32 HuffmanGetMaxLength(const u32 array_size, const u32 *array) {
 }
 
 // Generates the first values to use for each code length following the Huffman algorithm
-void HuffmanCreateFirstLengthValues(const u32 *length_counts,
-                                    u32 *first_lengths_values,
-                                    const u32 size) {
+internal void HuffmanCreateFirstLengthValues(const u32 *length_counts,
+                                             u32 *first_lengths_values,
+                                             const u32 size) {
     u32 code = 0;
     for(u32 i = 1; i < size; ++i) {
         code = (code + (length_counts[i - 1])) << 1;
-        //if(length_counts[i] > 0)
         first_lengths_values[i] = code;
     }
 }
 
-void HuffmanPrint(const u32 size, const u32 *huffman) {
+internal void HuffmanPrint(const u32 size, const u32 *huffman) {
     for(u32 i = 0; i < size; i++) {
         sTrace(BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(huffman[i]));
     }
 }
 
-void HuffmanCompute(const u32 size, const u32 *lengths, u32 *huffman_table) {
+internal void HuffmanCompute(const u32 size, const u32 *lengths, u32 *huffman_table) {
     u32 max_length = HuffmanGetMaxLength(size, lengths);
 
     // We will store here the amount of occurences of length i. ie : length_counts[9] == 8 > there are 8 codes with a length of 9
@@ -293,7 +259,10 @@ void HuffmanCompute(const u32 size, const u32 *lengths, u32 *huffman_table) {
     sFree(length_counts);
 }
 
-u32 HuffmanDecode(PNG_DataStream *stream, const u32 *codes, const u32 *lengths, const u32 size) {
+internal u32 HuffmanDecode(PNG_DataStream *stream,
+                           const u32 *codes,
+                           const u32 *lengths,
+                           const u32 size) {
     u32 result = 0;
     bool found = false;
     u32 length = 0;
@@ -301,9 +270,7 @@ u32 HuffmanDecode(PNG_DataStream *stream, const u32 *codes, const u32 *lengths, 
         if(lengths[i] == 0)
             continue;
         u32 code = StreamPeekBitsSwapped(stream, lengths[i]);
-        //sTrace("search : %d - length : %d - lookup %d", code, lengths[i], codes[i]);
         if(code == codes[i]) {
-            //sTrace("Found : %d == %d. Index: %u", code, codes[i], i);
             length = lengths[i];
 
             if(found) {
@@ -320,7 +287,7 @@ u32 HuffmanDecode(PNG_DataStream *stream, const u32 *codes, const u32 *lengths, 
     return result;
 }
 
-void PNGPrintHeader(const u8 *header) {
+internal void PNGPrintHeader(const u8 *header) {
     sTrace(
         "PNG : Header \n      %0.2X\n      %0.2X %0.2X %0.2X\n      %0.2X %0.2X\n      %0.2X\n      %0.2X",
         header[0],
@@ -333,11 +300,10 @@ void PNGPrintHeader(const u8 *header) {
         header[7]);
 }
 
-void PNGReadPacket(FILE *file, PNG_Packet *packet) {
+internal void PNGReadPacket(FILE *file, PNG_Packet *packet) {
     // Length
     fread(&packet->length, sizeof(u32), 1, file);
     packet->length = swap_u32(packet->length);
-    //sTrace("PNG : Length : %d", packet->length);
 
     // Type
     fread(&packet->type_u32, sizeof(char), 4, file);
@@ -366,9 +332,8 @@ void PNGReadPacket(FILE *file, PNG_Packet *packet) {
     fread(&packet->crc, sizeof(u32), 1, file);
 }
 
-bool PNGParse(FILE *file, PNG_DataStream *stream, PNG_Image *image) {
+internal bool PNGParse(FILE *file, PNG_DataStream *stream, PNG_Image *image) {
     for(;;) {
-        sTrace("----");
         PNG_Packet packet = {};
         PNGReadPacket(file, &packet);
 
@@ -430,7 +395,7 @@ bool PNGParse(FILE *file, PNG_DataStream *stream, PNG_Image *image) {
     return true;
 }
 
-void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
+internal void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
     // https://www.ietf.org/rfc/rfc1951.txt
     bool bfinal = 0;
     u32 bytes = 0;
@@ -523,10 +488,7 @@ void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
                 ASSERT(0);
             }
 
-            u32 iter = 0;
             for(;;) {
-                //sTrace("%d", iter);
-                iter++;
                 u32 length_code = HuffmanDecode(stream, litlen_table, HLITHDISTLengths, HLIT);
 
                 if(length_code <= 255) {
@@ -535,7 +497,7 @@ void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
                     bytes++;
                     continue;
                 } else if(length_code == 256) {
-                    sTrace("PNG : End of packet");
+                    srTrace(".");
                     break;
                 } else {
                     u32 length = FIXED_LENGTH_TABLE[length_code - 257];
@@ -572,11 +534,12 @@ void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
             sFree(HLITHDISTLengths);
         }
     } while(bfinal == 0);
+    srTrace("\n");
     ASSERT(out_ptr == dbg_end);
 }
 
 // https://www.w3.org/TR/2003/REC-PNG-20031110/#9Filters
-void PNGDefilter(PNG_Image *image, u8 *decompressed_image) {
+internal void PNGDefilter(PNG_Image *image, u8 *decompressed_image) {
     u8 *line = decompressed_image;
     u32 width_in_bytes = image->width * image->bpp + 1;
     u32 current_line = 0;
@@ -682,12 +645,10 @@ PNG_Image *sLoadImage(const char *path) {
         return 0;
     }
 
-    image->pixels = sMalloc(image->width * image->height * 4); //RGBA always
-
     u32 decompressed_image_size = image->width * image->height * image->bpp + image->height;
     u8 *decompressed_image = sMalloc(decompressed_image_size);
     u8 *decompressed_end = decompressed_image + decompressed_image_size;
-    sTrace("PNG : Decode");
+    srTrace("PNG : Decoding");
     PNGDecode(&stream, decompressed_image, decompressed_end);
     sTrace("PNG : Decoded");
 
@@ -701,6 +662,7 @@ PNG_Image *sLoadImage(const char *path) {
     }
 
     // Defilter
+    image->pixels = sMalloc(image->width * image->height * 4); //RGBA always
     sTrace("PNG : Filtering");
     PNGDefilter(image, decompressed_image);
     sTrace("PNG : Filtered");

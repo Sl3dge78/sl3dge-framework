@@ -1,10 +1,10 @@
 
 sImage :
     CRITICAL:
-        - Fix loading, it still doesn't work in some cases. (multiple idats, check for 1.png)
+        - Fix loading, it still doesn't work in some cases. (multiple idats are the issue?, check for 1.png)
         - Filter types 2 & 3 might not be working, test!
     MAJOR:
-        - Clear the debug stuff
+        - Clear the debug stuff:
             - in huffman decode we loop through every entry to check for dupes, this isn't necessary
             - lengths checks
     BACKLOG:
@@ -13,7 +13,7 @@ sImage :
         - Fixed table (btype == 1)
     IMPROVEMENTS:
         - Optimisations
-            - Find an alternative to bitwapping
+            - Find an alternative to bitswapping
             - Improve the bitstream ?
             - Remove empty entries in the tables
             - HuffmanDecode : sort the table by size to avoid reading from the stream each loop
