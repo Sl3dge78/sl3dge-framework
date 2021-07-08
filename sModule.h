@@ -2,6 +2,7 @@
 #define SMODULE_H
 
 #include <windows.h>
+#include "types.h"
 
 // SAMPLE
 /*
