@@ -8,6 +8,7 @@ sImage :
             - in huffman decode we loop through every entry to check for dupes, this isn't necessary
             - lengths checks
     BACKLOG:
+        - Load to buffer
         - Filter type 4
         - Uncompressed image (btype == 0)
         - Fixed table (btype == 1)

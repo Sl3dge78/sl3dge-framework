@@ -671,10 +671,116 @@ PNG_Image *sLoadImage(const char *path) {
 
     sFree(decompressed_image);
 
-    // TODO Free the datachunks
-
     sTrace("PNG : End");
     return image;
+}
+
+// Un peu dégueu peut etre qu'on peut extraire un bout des deux fonctions sans trop s'emmerder?
+bool sQueryImageSize(const char *path, u32 *w, u32 *h) {
+    FILE *file;
+    fopen_s(&file, path, "rb");
+    u8 header[8];
+    fread(header, sizeof(u8), 8, file);
+
+    PNG_Image image = {};
+    bool loop = true;
+    while(loop) {
+        PNG_Packet packet = {};
+        PNGReadPacket(file, &packet);
+
+        switch(packet.type) {
+        case PNG_TYPE_IHDR: {
+            PNG_IHDR hdr = {};
+            memcpy(&hdr, packet.data, sizeof(PNG_IHDR));
+
+            if(hdr.interlaced == 1) {
+                sError("Image is interlaced, this isn't supported yet");
+                return false;
+            }
+
+            if(hdr.color_type != 2 && hdr.color_type != 6) {
+                sError("Image isn't RGB or RGBA, this isn't supported yet");
+                return false;
+            }
+            if(hdr.filter != 0) {
+                sError("Filter type of 1 found. This isn't standard");
+                return false;
+            }
+
+            *w = swap_u32(hdr.width);
+            *h = swap_u32(hdr.height);
+
+            sFree(packet.data);
+            loop = false;
+        } break;
+
+        default: {
+            sFree(packet.data);
+            continue;
+        }
+        }
+    }
+    fclose(file);
+    return true;
+}
+
+bool sLoadImageTo(const char *path, void *dst) {
+    PNG_Image image = {};
+
+    // Check extension
+    u32 length = strlen(path);
+    u32 fmt_index = length - 3;
+    char extension[4];
+    memcpy(extension, path + fmt_index, 3);
+    extension[3] = '\0';
+    if(strcmp(extension, "png") != 0 && strcmp(extension, "PNG") != 0) {
+        sError("Error : Unsupported image format %s", extension);
+        return false;
+    }
+
+    sTrace("PNG : Begin");
+    FILE *file;
+    fopen_s(&file, path, "rb");
+    u8 header[8];
+    fread(header, sizeof(u8), 8, file);
+
+    PNG_DataStream stream = {0};
+    bool result = PNGParse(file, &stream, &image);
+    fclose(file);
+
+    if(!result) {
+        sError("Error parsing PNG.");
+        return 0;
+    }
+
+    u32 decompressed_image_size = image.width * image.height * image.bpp + image.height;
+    u8 *decompressed_image = sMalloc(decompressed_image_size);
+    u8 *decompressed_end = decompressed_image + decompressed_image_size;
+    srTrace("PNG : Decoding");
+    PNGDecode(&stream, decompressed_image, decompressed_end);
+    sTrace("PNG : Decoded");
+
+    for(;;) {
+        PNG_DataChunk *old = stream.first;
+        if(!old)
+            break;
+        stream.first = old->next;
+        sFree(old->data);
+        sFree(old);
+    }
+
+    // Defilter
+    image.pixels = (u8 *)dst;
+    sTrace("PNG : Filtering");
+    PNGDefilter(&image, decompressed_image);
+    sTrace("PNG : Filtered");
+    image.bpp = 4;
+    image.size = image.width * image.height * image.bpp;
+
+    sFree(decompressed_image);
+
+    sTrace("PNG : End");
+    return true;
 }
 
 void sDestroyImage(PNG_Image *image) {
