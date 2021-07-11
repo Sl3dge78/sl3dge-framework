@@ -98,26 +98,22 @@ internal void StreamFlushBits(PNG_DataStream *stream) {
 internal void *StreamReadSize(PNG_DataStream *stream, u32 size) {
     void *result = 0;
 
-    for(;;) {
-        if(size <= stream->contents_size) {
-            result = stream->contents;
-            stream->contents = (u8 *)stream->contents + size;
-            stream->contents_size -= size;
-            break;
-        } else if((stream->contents_size == 0) && stream->first) {
-            PNG_DataChunk *old = stream->first;
-            stream->first = stream->first->next;
-            stream->contents_size = stream->first->size;
-            stream->contents = stream->first->data;
-            sFree(old->data);
-            sFree(old);
-        } else {
-            break;
-        }
+    if((stream->contents_size == 0) && stream->first->next) {
+        PNG_DataChunk *old = stream->first;
+        stream->first = stream->first->next;
+        stream->contents_size = stream->first->size;
+        stream->contents = stream->first->data;
+        sFree(old->data);
+        sFree(old);
     }
-    if(!result) {
+
+    if(size <= stream->contents_size) {
+        result = stream->contents;
+        stream->contents = (u8 *)stream->contents + size;
+        stream->contents_size -= size;
+    } else {
+        ASSERT(0);
         sError("File underflow");
-        stream->contents_size = 0;
     }
 
     return result;
@@ -145,7 +141,7 @@ internal u32 StreamReadBits(PNG_DataStream *stream, const u8 count) {
     u32 result = 0;
     u8 bits_remaining = count;
 
-    while(stream->bits_left < count && stream->contents_size) {
+    while(stream->bits_left < count) {
         u32 byte = *StreamRead(stream, u8);
         stream->bit_buffer |= byte << stream->bits_left;
         stream->bits_left += 8;
@@ -183,14 +179,8 @@ internal u32 swap_bits(const u32 in, const u8 bit_size) {
 
 internal u32 StreamPeekBitsSwapped(PNG_DataStream *stream, const u8 size) {
     u32 result = 0;
-    while(stream->bits_left < size) {
-        u8 *ptr = StreamRead(stream, u8);
-        u8 byte = 0;
-        if(ptr) {
-            byte = *ptr;
-        } else {
-            sWarn("EOF reached");
-        }
+    while(stream->bits_left <= size) {
+        u8 byte = *StreamRead(stream, u8);
         stream->bit_buffer |= byte << stream->bits_left;
         stream->bits_left += 8;
     }
@@ -264,27 +254,18 @@ internal u32 HuffmanDecode(PNG_DataStream *stream,
                            const u32 *lengths,
                            const u32 size) {
     u32 result = 0;
-    bool found = false;
-    u32 length = 0;
     for(u32 i = 0; i < size; i++) {
         if(lengths[i] == 0)
             continue;
         u32 code = StreamPeekBitsSwapped(stream, lengths[i]);
         if(code == codes[i]) {
-            length = lengths[i];
-
-            if(found) {
-                sTrace("Two results possible!");
-            }
-            ASSERT(!found);
-            found = true;
-            result = i;
+            u32 garbage = StreamReadBits(stream, lengths[i]);
+            return i;
         }
     }
-    ASSERT_MSG(found, "Unable to find correspondance");
+    ASSERT_MSG(0, "Unable to find correspondance");
 
-    u32 garbage = StreamReadBits(stream, length);
-    return result;
+    return 0;
 }
 
 internal void PNGPrintHeader(const u8 *header) {
@@ -631,7 +612,10 @@ PNG_Image *sLoadImage(const char *path) {
 
     sTrace("PNG : Begin");
     FILE *file;
-    fopen_s(&file, path, "rb");
+    if(fopen_s(&file, path, "rb")) {
+        sError("Couldn't open file %s", path);
+        return 0;
+    }
     u8 header[8];
     fread(header, sizeof(u8), 8, file);
 

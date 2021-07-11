@@ -8,7 +8,7 @@
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 #else
 #define DLL_EXPORT __declspec(dllexport)
-typedef u8 bool;
+typedef uint8_t bool;
 
 #define true 1
 #define false 0
