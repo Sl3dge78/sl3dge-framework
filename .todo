@@ -11,11 +11,8 @@ sImage :
         - Fixed table (btype == 1)
     IMPROVEMENTS:
         - Optimisations
-            - Find an alternative to bitswapping
-            - Improve the bitstream ?
             - Remove empty entries in the tables
             - HuffmanDecode : sort the table by size to avoid reading from the stream each loop
-            - Let's try using a profiler to see how they work.
     IDEAS:
 
 

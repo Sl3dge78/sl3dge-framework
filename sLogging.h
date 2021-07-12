@@ -11,16 +11,16 @@
 
 #ifdef DEBUG
 // Adds a new line char at the end
-#define sTrace(message, ...) sLogOutputLine(LOG_LEVEL_TRACE, message, ##__VA_ARGS__)
-#define sLog(message, ...) sLogOutputLine(LOG_LEVEL_LOG, message, ##__VA_ARGS__)
-#define sWarn(message, ...) sLogOutputLine(LOG_LEVEL_WARN, message, ##__VA_ARGS__)
-#define sError(message, ...) sLogOutputLine(LOG_LEVEL_ERROR, message, ##__VA_ARGS__)
+#define sTrace(message, ...) sLogOutputLine(LOG_LEVEL_TRACE, message, __VA_ARGS__)
+#define sLog(message, ...) sLogOutputLine(LOG_LEVEL_LOG, message, __VA_ARGS__)
+#define sWarn(message, ...) sLogOutputLine(LOG_LEVEL_WARN, message, __VA_ARGS__)
+#define sError(message, ...) sLogOutputLine(LOG_LEVEL_ERROR, message, __VA_ARGS__)
 
 // Raw (no new line added)
-#define srTrace(message, ...) sLogOutput(LOG_LEVEL_TRACE, message, ##__VA_ARGS__)
-#define srLog(message, ...) sLogOutput(LOG_LEVEL_LOG, message, ##__VA_ARGS__)
-#define srWarn(message, ...) sLogOutput(LOG_LEVEL_WARN, message, ##__VA_ARGS__)
-#define srError(message, ...) sLogOutput(LOG_LEVEL_ERROR, message, ##__VA_ARGS__)
+#define srTrace(message, ...) sLogOutput(LOG_LEVEL_TRACE, message, __VA_ARGS__)
+#define srLog(message, ...) sLogOutput(LOG_LEVEL_LOG, message, __VA_ARGS__)
+#define srWarn(message, ...) sLogOutput(LOG_LEVEL_WARN, message, __VA_ARGS__)
+#define srError(message, ...) sLogOutput(LOG_LEVEL_ERROR, message, __VA_ARGS__)
 #else
 #define sTrace(message, ...)
 #define sLog(message, ...)
@@ -60,6 +60,7 @@ void DefaultLog(const char *message, const u8 level) {
     case LOG_LEVEL_LOG: printf("\033[0m"); break;
     case LOG_LEVEL_TRACE: printf("\033[1;30m"); break;
     }
+
     printf("%s", message);
     printf("\033[0m");
 }
@@ -79,12 +80,10 @@ void sLogOutputLine(u8 level, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
     char buffer[MAX_LOG_LENGTH];
-    vsnprintf_s(buffer, MAX_LOG_LENGTH, MAX_LOG_LENGTH, fmt, args);
+    vsnprintf(buffer, MAX_LOG_LENGTH, fmt, args);
     va_end(args);
 
-    const u32 length = strlen(buffer);
-    strncat_s(buffer, MAX_LOG_LENGTH, "\n\0", MAX_LOG_LENGTH);
-
+    strncat(buffer, "\n\0", 2);
     callback(buffer, level);
 }
 
@@ -94,11 +93,10 @@ void sLogOutput(u8 level, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
     char buffer[MAX_LOG_LENGTH];
-    vsnprintf_s(buffer, MAX_LOG_LENGTH, MAX_LOG_LENGTH, fmt, args);
+    vsnprintf(buffer, MAX_LOG_LENGTH, fmt, args);
     va_end(args);
 
-    const u32 length = strlen(buffer);
-    strncat_s(buffer, MAX_LOG_LENGTH, "\0", MAX_LOG_LENGTH);
+    strncat(buffer, "\0", 1);
 
     callback(buffer, level);
 }

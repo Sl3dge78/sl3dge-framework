@@ -29,43 +29,49 @@ typedef struct Vec2f {
 typedef Vec2f Vec2;
 
 typedef struct Vec3 {
-    alignas(4) float x;
-    alignas(4) float y;
-    alignas(4) float z;
+    alignas(4) f32 x;
+    alignas(4) f32 y;
+    alignas(4) f32 z;
 } Vec3;
 
 typedef struct Vec4 {
-    alignas(4) float x;
-    alignas(4) float y;
-    alignas(4) float z;
-    alignas(4) float w;
+    alignas(4) f32 x;
+    alignas(4) f32 y;
+    alignas(4) f32 z;
+    alignas(4) f32 w;
 } Vec4;
 
 typedef struct Quat {
-    float x;
-    float y;
-    float z;
-    float w;
+    f32 x;
+    f32 y;
+    f32 z;
+    f32 w;
 } Quat;
 
 typedef union Mat4 {
-    float v[16];
-    float m[4][4];
+    f32 v[16];
+    f32 m[4][4];
 } Mat4;
 
 u32 aligned_size(const u32 value, const u32 alignment) {
     return (value + alignment - 1) & ~(alignment - 1);
 }
 
-inline float radians(const float angle) {
+static inline f32 radians(const f32 angle) {
     return angle / 180.f * PI;
 }
 
-u32 swap_u32(u32 val) {
-    u32 result = (val >> 8) & 0x0000FF00 | (val << 8) & 0x00FF0000 | (val >> 24) & 0x000000FF |
-                 (val << 24) & 0xFF000000;
+u32 swap_u32(const u32 val) {
+    u32 result = ((val >> 8) & 0x0000FF00) | ((val << 8) & 0x00FF0000) |
+                 ((val >> 24) & 0x000000FF) | ((val << 24) & 0xFF000000);
     return result;
 }
+
+u16 swap_u16(const u16 val) {
+    u16 result = ((val << 8) & 0xFF00) | ((val >> 8) & 0x00FF);
+    return result;
+}
+
 u8 swap_u8(u8 val) {
     u8 result = 0;
     for(u8 i = 0; i < 8; ++i) {
@@ -82,7 +88,7 @@ inline void vec2f_print(const Vec2f v) {
     sLog("%f, %f", v.x, v.y);
 }
 
-inline float vec2f_length(const Vec2f v) {
+static inline f32 vec2f_length(const Vec2f v) {
     return sqrt((v.x * v.x) + (v.y * v.y));
 }
 
@@ -112,7 +118,7 @@ inline void vec2_ssub(Vec2f *v, const Vec2f b) {
     v->y -= b.y;
 }
 
-inline f32 vec2f_distance(const Vec2f a, const Vec2f b) {
+static inline f32 vec2f_distance(const Vec2f a, const Vec2f b) {
     Vec2f diff = vec2_sub(a, b);
     return vec2f_length(diff);
 }
@@ -202,7 +208,7 @@ void mat4_print(const Mat4 *mat) {
 }
 
 Mat4 mat4_mul(const Mat4 *a, const Mat4 *b) {
-    Mat4 result = {};
+    Mat4 result = {0};
 
     for(u32 i = 0; i < 4; i++) {
         for(u32 j = 0; j < 4; j++) {
@@ -215,29 +221,29 @@ Mat4 mat4_mul(const Mat4 *a, const Mat4 *b) {
     return result;
 }
 
-const Mat4 mat4_identity() {
-    Mat4 result = {1.0f,
-                   0.0f,
-                   0.0f,
-                   0.0f,
-                   0.0f,
-                   1.0f,
-                   0.0f,
-                   0.0f,
-                   0.0f,
-                   0.0f,
-                   1.0f,
-                   0.0f,
-                   0.0f,
-                   0.0f,
-                   0.0f,
-                   1.0f};
+Mat4 mat4_identity() {
+    Mat4 result = {{1.0f,
+                    0.0f,
+                    0.0f,
+                    0.0f,
+                    0.0f,
+                    1.0f,
+                    0.0f,
+                    0.0f,
+                    0.0f,
+                    0.0f,
+                    1.0f,
+                    0.0f,
+                    0.0f,
+                    0.0f,
+                    0.0f,
+                    1.0f}};
 
     return result;
 }
 
 void mat4_transpose(Mat4 *mat) {
-    Mat4 tmp = {};
+    Mat4 tmp = {0};
 
     for(u32 c = 0; c < 4; c++) {
         for(u32 r = 0; r < 4; r++) {
@@ -254,9 +260,9 @@ Mat4 mat4_perspective(const float fov,
                       const float aspect_ratio,
                       const float near_,
                       const float far_) {
-    Mat4 result = {};
+    Mat4 result = {0};
 
-    const float tan_theta_2 = tan(radians(fov) * 0.5f);
+    const f32 tan_theta_2 = tan(radians(fov) * 0.5f);
 
     result.m[0][0] = 1.0f / (aspect_ratio * tan_theta_2);
     result.m[1][1] = -1.0f / tan_theta_2;
@@ -274,7 +280,7 @@ Mat4 mat4_ortho(const float t,
                 const float r,
                 const float n,
                 const float f) {
-    Mat4 result = {};
+    Mat4 result = {0};
 
     result.m[0][0] = 2.0f / (r - l);
     result.m[1][1] = 2.0f / (b - t);
@@ -295,7 +301,7 @@ Mat4 mat4_ortho_zoom(float ratio, float zoom, float n, float f) {
     float t = height;
     float b = -height;
 
-    Mat4 result = {};
+    Mat4 result = {0};
 
     result.m[0][0] = 2.0f / (r - l);
     result.m[1][1] = 2.0f / (b - t);
@@ -407,7 +413,7 @@ void trs_to_mat4(Mat4 *dst, const Vec3 *t, const Quat *r, const Vec3 *s) {
     const float sqx = 2.0f * r->x * r->x;
     const float sqy = 2.0f * r->y * r->y;
     const float sqz = 2.0f * r->z * r->z;
-    const float sqw = 2.0f * r->w * r->w;
+    //const float sqw = 2.0f * r->w * r->w; // TODO This is unused, error ?
 
     const float xy = r->x * r->y;
     const float zw = r->z * r->w;
@@ -527,7 +533,7 @@ void quat_to_mat4(Mat4 *dst, const Quat *q) {
     const float sqx = 2.0f * q->x * q->x;
     const float sqy = 2.0f * q->y * q->y;
     const float sqz = 2.0f * q->z * q->z;
-    const float sqw = 2.0f * q->w * q->w;
+    //const float sqw = 2.0f * q->w * q->w; TODO This is unused error ?
 
     const float xy = q->x * q->y;
     const float zw = q->z * q->w;

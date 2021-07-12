@@ -132,7 +132,6 @@ internal void *StreamPeekSize(PNG_DataStream *stream, const u32 size) {
 
 internal u32 StreamReadBits(PNG_DataStream *stream, const u8 count) {
     u32 result = 0;
-    u8 bits_remaining = count;
 
     while(stream->bits_left < count) {
         u32 byte = *StreamRead(stream, u8);
@@ -147,6 +146,11 @@ internal u32 StreamReadBits(PNG_DataStream *stream, const u8 count) {
     }
 
     return result;
+}
+
+internal void StreamDestroyBits(PNG_DataStream *stream, const u8 count) {
+    stream->bits_left -= count;
+    stream->bit_buffer >>= count;
 }
 
 internal void StreamAppendChunk(PNG_DataStream *stream, PNG_DataChunk *chunk) {
@@ -197,8 +201,7 @@ internal u32 StreamPeekBitsSwapped(PNG_DataStream *stream, const u8 size) {
 
 // Goes through the input array, and writes the amount of occurences of the lengths at index length.
 // If there are three 4 size codes in the input, output[4] will be set to 3
-internal void
-HuffmanGetLengthCounts(const u32 input_size, const u32 *input, const u32 output_size, u32 *output) {
+internal void HuffmanGetLengthCounts(const u32 input_size, const u32 *input, u32 *output) {
     for(u32 i = 0; i < input_size; ++i) {
         output[input[i]]++;
     }
@@ -237,7 +240,7 @@ internal void HuffmanCompute(const u32 size, const u32 *lengths, u32 *huffman_ta
     // We will store here the amount of occurences of length i. ie : length_counts[9] == 8 > there are 8 codes with a length of 9
     u32 *length_counts = sCalloc(max_length + 1, sizeof(u32));
 
-    HuffmanGetLengthCounts(size, lengths, max_length + 1, length_counts);
+    HuffmanGetLengthCounts(size, lengths, length_counts);
     length_counts[0] = 0;
     // We will store here the next value to assign to a length i. if we want to query the next value for length 4 -> length_values[4].
     u32 *length_values = sCalloc(max_length + 1, sizeof(u32));
@@ -259,7 +262,6 @@ internal u32 HuffmanDecode(PNG_DataStream *stream,
                            const u32 *codes,
                            const u32 *lengths,
                            const u32 size) {
-    u32 result = 0;
     u32 code = StreamPeekBits(stream, 16);
     for(u32 i = 0; i < size; i++) {
         if(lengths[i] == 0)
@@ -267,7 +269,7 @@ internal u32 HuffmanDecode(PNG_DataStream *stream,
 
         u32 mask = (1 << lengths[i]) - 1;
         if((code & mask) == codes[i]) {
-            u32 garbage = StreamReadBits(stream, lengths[i]);
+            StreamDestroyBits(stream, lengths[i]);
             return i;
         }
     }
@@ -289,6 +291,8 @@ internal void PNGPrintHeader(const u8 *header) {
         header[7]);
 }
 
+#define PNGHEADER(v1, v2, v3, v4) (((u32)v1 << 24) | ((u32)v2 << 16) | ((u32)v3 << 8) | ((u32)v4))
+
 internal void PNGReadPacket(FILE *file, PNG_Packet *packet) {
     // Length
     fread(&packet->length, sizeof(u32), 1, file);
@@ -301,10 +305,10 @@ internal void PNGReadPacket(FILE *file, PNG_Packet *packet) {
     packet->type_u32 = swap_u32(packet->type_u32);
 
     switch(packet->type_u32) {
-    case('IHDR'): packet->type = PNG_TYPE_IHDR; break;
-    case('IDAT'): packet->type = PNG_TYPE_IDAT; break;
-    case('PLTE'): packet->type = PNG_TYPE_PLTE; break;
-    case('IEND'): packet->type = PNG_TYPE_IEND; break;
+    case(PNGHEADER('I', 'H', 'D', 'R')): packet->type = PNG_TYPE_IHDR; break;
+    case(PNGHEADER('I', 'D', 'A', 'T')): packet->type = PNG_TYPE_IDAT; break;
+    case(PNGHEADER('P', 'L', 'T', 'E')): packet->type = PNG_TYPE_PLTE; break;
+    case(PNGHEADER('I', 'E', 'N', 'D')): packet->type = PNG_TYPE_IEND; break;
     default: packet->type = PNG_UNKNOWN;
     }
 
@@ -323,7 +327,7 @@ internal void PNGReadPacket(FILE *file, PNG_Packet *packet) {
 
 internal bool PNGParse(FILE *file, PNG_DataStream *stream, PNG_Image *image) {
     for(;;) {
-        PNG_Packet packet = {};
+        PNG_Packet packet = {0};
         PNGReadPacket(file, &packet);
 
         if(packet.type == PNG_TYPE_IEND) {
@@ -333,7 +337,7 @@ internal bool PNGParse(FILE *file, PNG_DataStream *stream, PNG_Image *image) {
 
         switch(packet.type) {
         case PNG_TYPE_IHDR: {
-            PNG_IHDR hdr = {};
+            PNG_IHDR hdr = {0};
             memcpy(&hdr, packet.data, sizeof(PNG_IHDR));
 
             if(hdr.interlaced == 1) {
@@ -389,7 +393,7 @@ internal void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
     bool bfinal = 0;
     u32 bytes = 0;
     u8 *dbg_start = out_ptr;
-    PNG_IDAT idat = {};
+    PNG_IDAT idat = {0};
     idat.cm = StreamReadBits(stream, 4);
     idat.cinfo = StreamReadBits(stream, 4);
     idat.fcheck = StreamReadBits(stream, 5);
@@ -407,9 +411,10 @@ internal void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
         u8 btype = StreamReadBits(stream, 2);
         if(btype == 0) { // Uncompressed
             StreamFlushBits(stream);
-            u32 len = *StreamRead(stream, u32);
-            u32 nlen = *StreamRead(stream, u32);
             // TODO
+            //u32 len = *StreamRead(stream, u32);
+            //u32 nlen = *StreamRead(stream, u32);
+
             ASSERT_MSG(0, "I am not implemented");
         } else {
             u32 *litlen_table = 0;
@@ -422,7 +427,7 @@ internal void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
                 HDIST = StreamReadBits(stream, 5) + 1;
                 u32 HCLEN = StreamReadBits(stream, 4) + 4;
 
-                u32 HCLENLengthTable[19] = {};
+                u32 HCLENLengthTable[19] = {0};
                 const u32 HCLENSwizzle[] = {
                     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
 
@@ -618,8 +623,8 @@ PNG_Image *sLoadImage(const char *path) {
     }
 
     sTrace("PNG : Begin");
-    FILE *file;
-    if(fopen_s(&file, path, "rb")) {
+    FILE *file = fopen(path, "rb");
+    if(!file) {
         sError("Couldn't open file %s", path);
         return 0;
     }
@@ -670,19 +675,18 @@ PNG_Image *sLoadImage(const char *path) {
 
 // Un peu dégueu peut etre qu'on peut extraire un bout des deux fonctions sans trop s'emmerder?
 bool sQueryImageSize(const char *path, u32 *w, u32 *h) {
-    FILE *file;
-    fopen_s(&file, path, "rb");
+    FILE *file = fopen(path, "rb");
+    ASSERT(file);
     u8 header[8];
     fread(header, sizeof(u8), 8, file);
 
-    PNG_Image image = {};
     bool loop = true;
     while(loop) {
-        PNG_Packet packet = {};
+        PNG_Packet packet = {0};
         PNGReadPacket(file, &packet);
         switch(packet.type) {
         case PNG_TYPE_IHDR: {
-            PNG_IHDR hdr = {};
+            PNG_IHDR hdr = {0};
             memcpy(&hdr, packet.data, sizeof(PNG_IHDR));
 
             if(hdr.interlaced == 1) {
@@ -717,7 +721,7 @@ bool sQueryImageSize(const char *path, u32 *w, u32 *h) {
 }
 
 bool sLoadImageTo(const char *path, void *dst) {
-    PNG_Image image = {};
+    PNG_Image image = {0};
 
     // Check extension
     u32 length = strlen(path);
@@ -731,8 +735,8 @@ bool sLoadImageTo(const char *path, void *dst) {
     }
 
     sTrace("PNG : Begin");
-    FILE *file;
-    fopen_s(&file, path, "rb");
+    FILE *file = fopen(path, "rb");
+    ASSERT(file);
     u8 header[8];
     fread(header, sizeof(u8), 8, file);
 

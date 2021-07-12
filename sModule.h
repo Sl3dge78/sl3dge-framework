@@ -1,6 +1,7 @@
 #ifndef SMODULE_H
 #define SMODULE_H
 
+#ifdef __WIN32__
 #include <windows.h>
 #include "sTypes.h"
 
@@ -32,7 +33,7 @@ typedef struct Module {
 } Module;
 
 internal inline FILETIME Win32GetLastWriteTime(const char *file_name) {
-    FILETIME last_write_time = {};
+    FILETIME last_write_time = {0};
 
     WIN32_FIND_DATA data;
     HANDLE handle = FindFirstFile(file_name, &data);
@@ -57,16 +58,14 @@ internal bool Win32ShouldReloadModule(Module *module) {
 internal bool Win32LoadModule(Module *module, const char *name) {
     sTrace("Loading module %s", name);
 
-    u32 name_length = strlen(name);
     const char *path = "bin\\";
-    const u32 path_length = strlen(path);
 
     strcpy_s(module->meta_path, ARRAY_SIZE(module->meta_path), "");
     strcat_s(module->meta_path, ARRAY_SIZE(module->meta_path), path);
     strcat_s(module->meta_path, ARRAY_SIZE(module->meta_path), name);
     strcat_s(module->meta_path, ARRAY_SIZE(module->meta_path), ".meta");
 
-    char orig_dll[64] = {};
+    char orig_dll[64] = {0};
     strcat_s(orig_dll, ARRAY_SIZE(orig_dll), path);
     strcat_s(orig_dll, ARRAY_SIZE(orig_dll), name);
     strcat_s(orig_dll, ARRAY_SIZE(orig_dll), ".dll");
@@ -108,4 +107,5 @@ internal bool Win32LoadModule(Module *module, const char *name) {
 internal void Win32CloseModule(Module *module) {
     FreeLibrary(module->dll);
 }
+#endif
 #endif // SL_MODULE_H

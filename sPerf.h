@@ -17,9 +17,9 @@ typedef struct PerfInfo {
 i64 clock_frequency = 0;
 const u32 infos_size = 64;
 u32 counter = 0;
-PerfInfo infos[infos_size] = {};
+PerfInfo infos[infos_size] = {0};
 
-void sInitPerf_() {
+void sInitPerf() {
     LARGE_INTEGER frequency;
     QueryPerformanceFrequency(&frequency);
     clock_frequency = frequency.QuadPart;
@@ -70,10 +70,10 @@ void sDumpPerf_() {
     for(u32 i = 0; i < counter; i++) {
         PerfInfo *info = &infos[i];
 
-        f64 total_time = info->accumulated_time / 1000000.0f;
+        f64 total_time = info->accumulated_time / 1000.0f;
         f64 average = total_time / (f32)info->calls;
 
-        sLog("%s - Total time : %f (Calls : %u, Avg : %f)",
+        sLog("%s - Total time : %fms (Calls : %u, Avg : %f)",
              info->name,
              total_time,
              info->calls,

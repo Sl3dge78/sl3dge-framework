@@ -34,7 +34,7 @@ typedef struct {
 global TestState state;
 
 void TEST_BEGIN() {
-    state = (TestState){};
+    state = (TestState){0};
     sLog("TEST BEGIN");
     sLog("GOT -- EXPECTED");
 }
@@ -50,7 +50,7 @@ void TEST_END() {
 }
 
 internal void TestSuccess(const char *file, const u32 line) {
-    //sLog("OK  : %s:%d", file, line);
+    sTrace("OK  : %s:%d", file, line);
     state.test_count++;
     state.test_ok++;
 }
