@@ -5,3 +5,4 @@
 #include "sLogging.h"
 #include "sTests.h"
 #include "sImage.h"
+#include "sPerf.h"

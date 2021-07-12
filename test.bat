@@ -3,10 +3,8 @@ setlocal enabledelayedexpansion
 
 REM Sample of a build file
 
-CLS
-
 SET timestamp=%TIME:~3,2%%TIME:~6,2%
-SET args=-g -DDEBUG
+SET args=-g -Werror -DDEBUG -D__WIN32__
 SET include_path=-I D:\Guigui\Work\Prog\_include\ -I %VULKAN_SDK%\include
 
 SET linker_options=-L D:\Guigui\Work\Prog\_lib -L %VULKAN_SDK%\lib -Xlinker -incremental:no
