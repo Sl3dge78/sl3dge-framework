@@ -43,7 +43,7 @@ typedef enum LogLevel {
     LOG_LEVEL_NONE = LOG_LEVEL_LOG,
 } LogLevel;
 
-global LogLevel LOG_LEVEL = LOG_LEVEL_WARN;
+global LogLevel LOG_LEVEL = LOG_LEVEL_LOG;
 
 enum LogColor { LOG_COLOR_WHITE, LOG_COLOR_RED, LOG_COLOR_YELLOW, LOG_COLOR_GREY, LOG_COLOR_GREEN };
 
