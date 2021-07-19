@@ -7,7 +7,7 @@
 
 #include "sTypes.h"
 
-#define MAX_LOG_LENGTH 256
+#define MAX_LOG_LENGTH 1024
 
 #ifdef DEBUG
 // Adds a new line char at the end
