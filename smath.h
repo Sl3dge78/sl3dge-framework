@@ -274,6 +274,20 @@ Mat4 mat4_perspective(const float fov,
     return result;
 }
 
+Mat4 mat4_perspective_gl(const f32 fov, const f32 aspect_ratio, const f32 znear, const f32 zfar) {
+    Mat4 result = {0};
+    const f32 tan_theta_2 = tan(radians(fov) * 0.5f);
+
+    result.m[0][0] = 1.0f / (aspect_ratio * tan_theta_2);
+    result.m[1][1] = 1.0f / tan_theta_2;
+    result.m[2][2] = (znear + zfar) / (znear - zfar);
+    result.m[2][3] = -1.0f;
+    result.m[3][2] = (2.0f * znear * zfar) / (znear - zfar);
+    result.m[3][3] = 0.0f;
+
+    return result;
+}
+
 Mat4 mat4_ortho(const float t,
                 const float b,
                 const float l,
