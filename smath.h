@@ -292,16 +292,16 @@ Mat4 mat4_ortho(const float t,
                 const float b,
                 const float l,
                 const float r,
-                const float n,
-                const float f) {
+                const float znear,
+                const float zfar) {
     Mat4 result = {0};
 
     result.m[0][0] = 2.0f / (r - l);
     result.m[1][1] = 2.0f / (b - t);
-    result.m[2][2] = -2.0f / (f - n);
+    result.m[2][2] = -2.0f / (zfar - znear);
     result.m[3][0] = -(r + l) / (r - l);
     result.m[3][1] = -(b + t) / (b - t);
-    result.m[3][2] = -n / (f - n);
+    result.m[3][2] = -znear / (zfar - znear);
     result.m[3][3] = 1.0f;
 
     return result;
@@ -323,6 +323,27 @@ Mat4 mat4_ortho_zoom(float ratio, float zoom, float n, float f) {
     result.m[3][0] = -(r + l) / (r - l);
     result.m[3][1] = -(b + t) / (b - t);
     result.m[3][2] = -n / (f - n);
+    result.m[3][3] = 1.0f;
+
+    return result;
+}
+
+Mat4 mat4_ortho_zoom_gl(float ratio, float zoom, float n, float f) {
+    float width = ratio * zoom;
+    float height = (1.0f / ratio) * zoom;
+    float l = -width;
+    float r = width;
+    float t = height;
+    float b = -height;
+
+    Mat4 result = {0};
+
+    result.m[0][0] = 2.0f / (r - l);
+    result.m[1][1] = 2.0f / (t - b);
+    result.m[2][2] = -2.0f / (f - n);
+    result.m[3][0] = -(r + l) / (r - l);
+    result.m[3][1] = -(t + b) / (t - b);
+    result.m[3][2] = -(f + n) / (f - n);
     result.m[3][3] = 1.0f;
 
     return result;
