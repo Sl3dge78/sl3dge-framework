@@ -51,7 +51,22 @@ typedef void LogCallback_t(const char *message, const u8 level);
 typedef LogCallback_t *PFN_LogCallback;
 LogCallback_t DefaultLog;
 
+void sLogSetCallback(PFN_LogCallback cb);
+void sLogLevel(LogLevel level);
+void sLogOutputLine(u8 level, const char *fmt, ...);
+void sLogOutput(u8 level, const char *fmt, ...);
+
+typedef void LogColorCallback_t(enum LogColor color);
+typedef LogColorCallback_t *PFN_LogColorCallback;
+LogColorCallback_t DefaultLogSetColor;
+
+void sLogSetColor(enum LogColor color);
+void DefaultLogSetColor(enum LogColor color);
+
+#if defined(SL3DGE_IMPLEMENTATION) || defined(__INTELLISENSE__)
+
 global PFN_LogCallback callback = &DefaultLog;
+global PFN_LogColorCallback color_callback = &DefaultLogSetColor;
 
 void DefaultLog(const char *message, const u8 level) {
     switch(level) {
@@ -101,12 +116,6 @@ void sLogOutput(u8 level, const char *fmt, ...) {
     callback(buffer, level);
 }
 
-typedef void LogColorCallback_t(enum LogColor color);
-typedef LogColorCallback_t *PFN_LogColorCallback;
-LogColorCallback_t DefaultLogSetColor;
-
-global PFN_LogColorCallback color_callback = &DefaultLogSetColor;
-
 void sLogSetColor(enum LogColor color) {
     color_callback(color);
 }
@@ -120,5 +129,5 @@ void DefaultLogSetColor(enum LogColor color) {
     case(LOG_COLOR_GREEN): printf("\033[0;32m"); break;
     }
 }
-
-#endif
+#endif // #if defined(SLEDGE_IMPLEMENTATION) || defined(__INTELLISENSE__)
+#endif // SLOGGING_H

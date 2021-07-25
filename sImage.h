@@ -4,8 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "sl3dge.h"
-
 typedef struct {
     u32 width;
     u32 height;
@@ -14,6 +12,15 @@ typedef struct {
     u32 size;
 
 } PNG_Image;
+
+PNG_Image *sLoadImage(const char *path);
+bool sQueryImageSize(const char *path, u32 *w, u32 *h);
+bool sLoadImageTo(const char *path, void *dst);
+void sDestroyImage(PNG_Image *image);
+
+#if defined(SL3DGE_IMPLEMENTATION) || defined(__INTELLISENSE__)
+
+#include "sl3dge.h"
 
 typedef enum {
     PNG_UNKNOWN = 0,
@@ -783,5 +790,5 @@ void sDestroyImage(PNG_Image *image) {
     sFree(image->pixels);
     sFree(image);
 }
-
+#endif //#if defined(SL3DGE_IMPLEMENTATION) || defined(__INTELLISENSE__)
 #endif

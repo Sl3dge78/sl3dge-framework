@@ -53,6 +53,66 @@ typedef union Mat4 {
     f32 m[4][4];
 } Mat4;
 
+u32 aligned_size(const u32 value, const u32 alignment);
+static inline f32 radians(const f32 angle);
+u32 swap_u32(const u32 val);
+u16 swap_u16(const u16 val);
+u8 swap_u8(u8 val);
+
+// Vec2
+inline void vec2f_print(const Vec2f v);
+static inline f32 vec2f_length(const Vec2f v);
+void vec2f_normalize(Vec2f *v);
+inline bool vec2f_in_circle(const Vec2f v, const Vec2f center, f32 radius);
+inline bool vec2f_in_rect(const Vec2f v, const Rect rect);
+inline Vec2f vec2_sub(const Vec2f r, const Vec2f l);
+inline void vec2_ssub(Vec2f *v, const Vec2f b);
+static inline f32 vec2f_distance(const Vec2f a, const Vec2f b);
+
+// Vec3
+inline Vec3 spherical_to_carthesian(const Vec2f v);
+inline void vec3_print(const Vec3 *v);
+Vec3 vec3_add(const Vec3 a, const Vec3 b);
+Vec3 vec3_sub(const Vec3 a, const Vec3 b);
+Vec3 vec3_fmul(const Vec3 vec, const float mul);
+f32 vec3_length(const Vec3 v);
+Vec3 vec3_normalize(const Vec3 v);
+Vec3 vec3_cross(const Vec3 a, const Vec3 b);
+float vec3_dot(const Vec3 a, const Vec3 b);
+
+// Mat4
+void mat4_print(const Mat4 *mat);
+Mat4 mat4_mul(const Mat4 *a, const Mat4 *b);
+Mat4 mat4_identity();
+void mat4_transpose(Mat4 *mat);
+Mat4 mat4_perspective(const float fov,
+                      const float aspect_ratio,
+                      const float near_,
+                      const float far_);
+Mat4 mat4_perspective_gl(const f32 fov, const f32 aspect_ratio, const f32 znear, const f32 zfar);
+Mat4 mat4_ortho(const float t,
+                const float b,
+                const float l,
+                const float r,
+                const float znear,
+                const float zfar);
+Mat4 mat4_ortho_zoom(float ratio, float zoom, float n, float f);
+Mat4 mat4_ortho_zoom_gl(float ratio, float zoom, float n, float f);
+inline void mat4_translate(Mat4 *mat, const Vec3 vec);
+inline void mat4_set_position(Mat4 *mat, const Vec3 vec);
+void mat4_rotate_x(Mat4 *mat, const float radians);
+void mat4_rotate_y(Mat4 *mat, const float radians);
+void mat4_rotate_z(Mat4 *mat, const float radians);
+void mat4_rotate_euler(Mat4 *mat, const Vec3 euler);
+Mat4 mat4_look_at(const Vec3 target, const Vec3 eye, const Vec3 up);
+void trs_to_mat4(Mat4 *dst, const Vec3 *t, const Quat *r, const Vec3 *s);
+void mat4_inverse(const Mat4 *m, Mat4 *out);
+
+// Quaternion
+void quat_to_mat4(Mat4 *dst, const Quat *q);
+
+#if defined(SL3DGE_IMPLEMENTATION) || defined(__INTELLISENSE__)
+
 u32 aligned_size(const u32 value, const u32 alignment) {
     return (value + alignment - 1) & ~(alignment - 1);
 }
@@ -601,4 +661,5 @@ void quat_to_mat4(Mat4 *dst, const Quat *q) {
     dst->v[14] = 0.0f;
     dst->v[15] = 1.0f;
 }
+#endif // SLEDGE_IMPLEMENTATION
 #endif // SL_MATH_H
