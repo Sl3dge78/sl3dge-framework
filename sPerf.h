@@ -5,7 +5,7 @@
 #include "sLogging.h"
 
 #if defined(__WIN32__)
-
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 typedef struct PerfInfo {
     const char *name;
@@ -17,7 +17,7 @@ typedef struct PerfInfo {
 i64 clock_frequency = 0;
 const u32 infos_size = 64;
 u32 counter = 0;
-PerfInfo infos[infos_size] = {0};
+PerfInfo infos[64] = {0};
 
 void sInitPerf() {
     LARGE_INTEGER frequency;
