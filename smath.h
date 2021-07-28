@@ -367,6 +367,25 @@ Mat4 mat4_ortho(const float t,
     return result;
 }
 
+const Mat4 mat4_ortho_gl(const float t,
+                         const float b,
+                         const float l,
+                         const float r,
+                         const float znear,
+                         const float zfar) {
+    Mat4 result = {0};
+
+    result.m[0][0] = 2.0f / (r - l);
+    result.m[1][1] = 2.0f / (t - b);
+    result.m[2][2] = -2.0f / (zfar - znear);
+    result.m[3][0] = -(r + l) / (r - l);
+    result.m[3][1] = -(t + b) / (t - b);
+    result.m[3][2] = -znear / (zfar - znear);
+    result.m[3][3] = 1.0f;
+
+    return result;
+}
+
 Mat4 mat4_ortho_zoom(float ratio, float zoom, float n, float f) {
     float width = ratio * zoom;
     float height = (1.0f / ratio) * zoom;
