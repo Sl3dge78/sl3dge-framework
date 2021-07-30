@@ -157,8 +157,7 @@ void PerformEndChecks() {
     DBG_keep_console_open |= DBG_DumpMemoryLeaks();
 
     if(DBG_keep_console_open) {
-        while(1)
-            ;
+        system("pause");
     }
 }
 
