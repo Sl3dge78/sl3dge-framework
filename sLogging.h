@@ -47,9 +47,9 @@ global LogLevel LOG_LEVEL = LOG_LEVEL_LOG;
 
 enum LogColor { LOG_COLOR_WHITE, LOG_COLOR_RED, LOG_COLOR_YELLOW, LOG_COLOR_GREY, LOG_COLOR_GREEN };
 
-typedef void LogCallback_t(const char *message, const u8 level);
-typedef LogCallback_t *PFN_LogCallback;
-LogCallback_t DefaultLog;
+typedef void sLogCallback_t(const char *message, const u8 level);
+typedef sLogCallback_t *PFN_LogCallback;
+sLogCallback_t DefaultLog;
 
 void sLogSetCallback(PFN_LogCallback cb);
 void sLogLevel(LogLevel level);
@@ -69,15 +69,16 @@ global PFN_LogCallback callback = &DefaultLog;
 global PFN_LogColorCallback color_callback = &DefaultLogSetColor;
 
 void DefaultLog(const char *message, const u8 level) {
+/*
     switch(level) {
     case LOG_LEVEL_ERROR: printf("\033[0;31m"); break;
     case LOG_LEVEL_WARN: printf("\033[0;33m"); break;
     case LOG_LEVEL_LOG: printf("\033[0m"); break;
     case LOG_LEVEL_TRACE: printf("\033[1;30m"); break;
     }
-
+  */
     printf("%s", message);
-    printf("\033[0m");
+//    printf("\033[0m");
 }
 
 void sLogSetCallback(PFN_LogCallback cb) {
