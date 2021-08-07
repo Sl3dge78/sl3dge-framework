@@ -107,6 +107,7 @@ void mat4_rotate_euler(Mat4 *mat, const Vec3 euler);
 Mat4 mat4_look_at(const Vec3 target, const Vec3 eye, const Vec3 up);
 void trs_to_mat4(Mat4 *dst, const Vec3 *t, const Quat *r, const Vec3 *s);
 void mat4_inverse(const Mat4 *m, Mat4 *out);
+Vec3 mat4_get_translation(Mat4 *mat);
 
 // Quaternion
 void quat_to_mat4(Mat4 *dst, const Quat *q);
@@ -641,6 +642,11 @@ void mat4_inverse(const Mat4 *m, Mat4 *out) {
         out->v[i] = inv.v[i] * det;
 }
 
+Vec3 mat4_get_translation(Mat4 *mat) {
+    Vec3 result = *(Vec3 *)&mat->v[12]; // Haxxxxxxxorzzz
+    return result;
+}
+
 // =====================================================
 
 void quat_to_mat4(Mat4 *dst, const Quat *q) {
@@ -680,5 +686,6 @@ void quat_to_mat4(Mat4 *dst, const Quat *q) {
     dst->v[14] = 0.0f;
     dst->v[15] = 1.0f;
 }
+
 #endif // SLEDGE_IMPLEMENTATION
 #endif // SL_MATH_H

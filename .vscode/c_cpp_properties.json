@@ -15,7 +15,8 @@
             ],
             "windowsSdkVersion": "10.0.19041.0",
             "compilerPath": "D:\\Program Files\\LLVM\\bin\\clang.exe",
-            "cppStandard": "c++17"
+            "cppStandard": "c++17",
+            "compileCommands": "D:/Guigui/Work/Prog/vulkan/compile_commands.json"
         }
     ],
     "version": 4
