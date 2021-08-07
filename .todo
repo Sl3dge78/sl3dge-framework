@@ -18,9 +18,9 @@ sImage :
 
 sMath :
     CRITICAL:
-
+        - SIMD plz
     MAJOR:
-        - mat4_rotate_y : maybe doesn't work
+
     BACKLOG:
 
     IMPROVEMENTS:

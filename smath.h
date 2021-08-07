@@ -100,14 +100,17 @@ Mat4 mat4_ortho_zoom(float ratio, float zoom, float n, float f);
 Mat4 mat4_ortho_zoom_gl(float ratio, float zoom, float n, float f);
 inline void mat4_translate(Mat4 *mat, const Vec3 vec);
 inline void mat4_set_position(Mat4 *mat, const Vec3 vec);
-void mat4_rotate_x(Mat4 *mat, const float radians);
-void mat4_rotate_y(Mat4 *mat, const float radians);
-void mat4_rotate_z(Mat4 *mat, const float radians);
+void mat4_rotation_x(Mat4 *mat, const float radians);
+void mat4_rotation_y(Mat4 *mat, const float radians);
+void mat4_rotation_z(Mat4 *mat, const float radians);
 void mat4_rotate_euler(Mat4 *mat, const Vec3 euler);
 Mat4 mat4_look_at(const Vec3 target, const Vec3 eye, const Vec3 up);
-void trs_to_mat4(Mat4 *dst, const Vec3 *t, const Quat *r, const Vec3 *s);
+//void trs_to_mat4(Mat4 *dst, const Vec3 *t, const Quat *r, const Vec3 *s);
 void mat4_inverse(const Mat4 *m, Mat4 *out);
-Vec3 mat4_get_translation(Mat4 *mat);
+Vec3 mat4_get_translation(const Mat4 *mat);
+Vec4 mat4_mul_vec4(const Mat4 *mat, const Vec4 vec);
+void mat4_scale(Mat4 *dst, const Vec3 s);
+Mat4 trs_to_mat4(const Vec3 t, const Vec3 r, const Vec3 s);
 
 // Quaternion
 void quat_to_mat4(Mat4 *dst, const Quat *q);
@@ -208,6 +211,11 @@ Vec3 vec3_add(const Vec3 a, const Vec3 b) {
 
 Vec3 vec3_sub(const Vec3 a, const Vec3 b) {
     Vec3 result = {a.x - b.x, a.y - b.y, a.z - b.z};
+    return result;
+}
+
+Vec3 vec3_mul(const Vec3 a, const Vec3 b) {
+    Vec3 result = {a.x * b.x, a.y * b.y, a.z * b.z};
     return result;
 }
 
@@ -441,7 +449,7 @@ inline void mat4_set_position(Mat4 *mat, const Vec3 vec) {
     mat->m[3][2] = vec.z;
 }
 
-void mat4_rotate_x(Mat4 *mat, const float radians) {
+void mat4_rotation_x(Mat4 *mat, const float radians) {
     mat->m[0][0] = 1.0f;
     mat->m[1][1] = cos(radians);
     mat->m[1][2] = -sin(radians);
@@ -450,7 +458,7 @@ void mat4_rotate_x(Mat4 *mat, const float radians) {
     mat->m[3][3] = 1.0f;
 }
 
-void mat4_rotate_y(Mat4 *mat, const float radians) {
+void mat4_rotation_y(Mat4 *mat, const float radians) {
     mat->m[0][0] = cos(radians);
     mat->m[0][2] = sin(radians);
     mat->m[1][1] = 1.0f;
@@ -459,7 +467,7 @@ void mat4_rotate_y(Mat4 *mat, const float radians) {
     mat->m[3][3] = 1.0f;
 }
 
-void mat4_rotate_z(Mat4 *mat, const float radians) {
+void mat4_rotation_z(Mat4 *mat, const float radians) {
     mat->m[0][0] = cos(radians);
     mat->m[0][1] = -sin(radians);
     mat->m[1][0] = sin(radians);
@@ -524,7 +532,7 @@ Mat4 mat4_look_at(const Vec3 target, const Vec3 eye, const Vec3 up) {
     return mat;
 }
 
-void trs_to_mat4(Mat4 *dst, const Vec3 *t, const Quat *r, const Vec3 *s) {
+void trs_quat_to_mat4(Mat4 *dst, const Vec3 *t, const Quat *r, const Vec3 *s) {
     const float sqx = 2.0f * r->x * r->x;
     const float sqy = 2.0f * r->y * r->y;
     const float sqz = 2.0f * r->z * r->z;
@@ -558,6 +566,14 @@ void trs_to_mat4(Mat4 *dst, const Vec3 *t, const Quat *r, const Vec3 *s) {
     dst->v[13] = t->y;
     dst->v[14] = t->z;
     dst->v[15] = 1.0f;
+}
+
+Mat4 trs_to_mat4(const Vec3 t, const Vec3 r, const Vec3 s) {
+    Mat4 result = mat4_identity();
+    mat4_translate(&result, t);
+    mat4_rotate_euler(&result, r);
+    mat4_scale(&result, s);
+    return result;
 }
 
 void mat4_inverse(const Mat4 *m, Mat4 *out) {
@@ -642,9 +658,39 @@ void mat4_inverse(const Mat4 *m, Mat4 *out) {
         out->v[i] = inv.v[i] * det;
 }
 
-Vec3 mat4_get_translation(Mat4 *mat) {
+Vec3 mat4_get_translation(const Mat4 *mat) {
     Vec3 result = *(Vec3 *)&mat->v[12]; // Haxxxxxxxorzzz
     return result;
+}
+
+Vec4 mat4_mul_vec4(const Mat4 *mat, const Vec4 vec) {
+    Vec4 result = {0};
+    result.x = vec.x * mat->v[0] + vec.y * mat->v[1] + vec.z * mat->v[2] + vec.w * mat->v[3];
+    result.y = vec.x * mat->v[4] + vec.y * mat->v[5] + vec.z * mat->v[6] + vec.w * mat->v[7];
+    result.z = vec.x * mat->v[8] + vec.y * mat->v[9] + vec.z * mat->v[10] + vec.w * mat->v[11];
+    result.w = vec.x * mat->v[12] + vec.y * mat->v[13] + vec.z * mat->v[14] + vec.w * mat->v[15];
+    return result;
+}
+
+// This assumes that w == 0
+Vec3 mat4_mul_vec3(const Mat4 *mat, const Vec3 vec) {
+    Vec3 result = {0};
+    result.x = vec.x * mat->v[0] + vec.y * mat->v[1] + vec.z * mat->v[2];
+    result.y = vec.x * mat->v[4] + vec.y * mat->v[5] + vec.z * mat->v[6];
+    result.z = vec.x * mat->v[8] + vec.y * mat->v[9] + vec.z * mat->v[10];
+    return result;
+}
+
+void mat4_scale(Mat4 *dst, const Vec3 s) {
+    dst->v[0] *= s.x;
+    dst->v[1] *= s.x;
+    dst->v[2] *= s.x;
+    dst->v[4] *= s.y;
+    dst->v[5] *= s.y;
+    dst->v[6] *= s.y;
+    dst->v[8] *= s.z;
+    dst->v[9] *= s.z;
+    dst->v[10] *= s.z;
 }
 
 // =====================================================
