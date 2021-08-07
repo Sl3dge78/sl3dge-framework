@@ -255,7 +255,7 @@ float vec3_dot(const Vec3 a, const Vec3 b) {
 
 // =====================================================
 
-void mat4_print(const Mat4 *mat) {
+void mat4_print(const Mat4 *const mat) {
     sLog("\n%#.3f, %#.3f, %#.3f, %#.3f\n%#.3f, %#.3f, %#.3f, %#.3f\n%#.3f, "
          "%#.3f, %#.3f, %#.3f\n%#.3f, %#.3f, %#.3f, %#.3f",
          mat->v[0],
@@ -276,7 +276,7 @@ void mat4_print(const Mat4 *mat) {
          mat->v[15]);
 }
 
-Mat4 mat4_mul(const Mat4 *a, const Mat4 *b) {
+Mat4 mat4_mul(const Mat4 *restrict const a, const Mat4 *restrict const b) {
     Mat4 result = {0};
 
     for(u32 i = 0; i < 4; i++) {
@@ -311,7 +311,7 @@ Mat4 mat4_identity() {
     return result;
 }
 
-void mat4_transpose(Mat4 *mat) {
+void mat4_transpose(Mat4 *restrict mat) {
     Mat4 tmp = {0};
 
     for(u32 c = 0; c < 4; c++) {
@@ -476,7 +476,7 @@ void mat4_rotation_z(Mat4 *mat, const float radians) {
     mat->m[3][3] = 1.0f;
 }
 
-void mat4_rotate_euler(Mat4 *mat, const Vec3 euler) {
+void mat4_rotate_euler(Mat4 *restrict mat, const Vec3 euler) {
     const float cx = cos(euler.x);
     const float sx = sin(euler.x);
     const float cy = cos(euler.y);
@@ -532,7 +532,7 @@ Mat4 mat4_look_at(const Vec3 target, const Vec3 eye, const Vec3 up) {
     return mat;
 }
 
-void trs_quat_to_mat4(Mat4 *dst, const Vec3 *t, const Quat *r, const Vec3 *s) {
+void trs_quat_to_mat4(Mat4 *restrict dst, const Vec3 *t, const Quat *r, const Vec3 *s) {
     const float sqx = 2.0f * r->x * r->x;
     const float sqy = 2.0f * r->y * r->y;
     const float sqz = 2.0f * r->z * r->z;
@@ -576,7 +576,7 @@ Mat4 trs_to_mat4(const Vec3 t, const Vec3 r, const Vec3 s) {
     return result;
 }
 
-void mat4_inverse(const Mat4 *m, Mat4 *out) {
+void mat4_inverse(const Mat4 *const restrict m, Mat4 *out) {
     Mat4 inv;
     float det;
     int i;
@@ -663,7 +663,7 @@ Vec3 mat4_get_translation(const Mat4 *mat) {
     return result;
 }
 
-Vec4 mat4_mul_vec4(const Mat4 *mat, const Vec4 vec) {
+Vec4 mat4_mul_vec4(const Mat4 *restrict const mat, const Vec4 vec) {
     Vec4 result = {0};
     result.x = vec.x * mat->v[0] + vec.y * mat->v[1] + vec.z * mat->v[2] + vec.w * mat->v[3];
     result.y = vec.x * mat->v[4] + vec.y * mat->v[5] + vec.z * mat->v[6] + vec.w * mat->v[7];
@@ -673,7 +673,7 @@ Vec4 mat4_mul_vec4(const Mat4 *mat, const Vec4 vec) {
 }
 
 // This assumes that w == 0
-Vec3 mat4_mul_vec3(const Mat4 *mat, const Vec3 vec) {
+Vec3 mat4_mul_vec3(const Mat4 *const mat, const Vec3 vec) {
     Vec3 result = {0};
     result.x = vec.x * mat->v[0] + vec.y * mat->v[1] + vec.z * mat->v[2];
     result.y = vec.x * mat->v[4] + vec.y * mat->v[5] + vec.z * mat->v[6];
@@ -681,7 +681,7 @@ Vec3 mat4_mul_vec3(const Mat4 *mat, const Vec3 vec) {
     return result;
 }
 
-void mat4_scale(Mat4 *dst, const Vec3 s) {
+void mat4_scale(Mat4 *restrict dst, const Vec3 s) {
     dst->v[0] *= s.x;
     dst->v[1] *= s.x;
     dst->v[2] *= s.x;
