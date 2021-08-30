@@ -12,6 +12,7 @@
     if(!(expression)) {                                                                            \
         __builtin_trap();                                                                          \
     }
+
 #define ASSERT_MSG(expression, msg)                                                                \
     if(!(expression)) {                                                                            \
         sError(msg);                                                                               \
@@ -71,6 +72,7 @@ internal void add_memory_info(void *ptr, size_t size, const char *filename, u32 
 internal void delete_memory_info(void *ptr) {
     ASSERT_MSG(array_start, "Attempting to free a nullptr!");
 
+    // Si c'est le premier dans la liste
     if(array_start->info.ptr == ptr) {
         MemoryLeak *leak = array_start;
         array_start = array_start->next;
@@ -79,9 +81,16 @@ internal void delete_memory_info(void *ptr) {
         return;
     }
 
+    // Sinon
     for(MemoryLeak *leak = array_start; leak != NULL; leak = leak->next) {
         MemoryLeak *next_leak = leak->next;
-        ASSERT_MSG(next_leak, "Attempting to free a nullptr!");
+        if(!next_leak) {
+            // The ptr couldn't be found in the list of leaks. Multiple options
+            // 1. We could have freed a nullptr. Hopefully the program will crash in that case
+            // 2. DLL/Threads shinanigans, ie : when we reloaded a dll, this header was included, so a new list was created, so when we free the ptr, it doesn't exist in the list
+            ASSERT_MSG(next_leak, "Attempting to free a nullptr!");
+            return;
+        }
 
         if(next_leak->info.ptr == ptr) { // Si il faut supprimer le suivant
             if(array_end == next_leak) {
@@ -139,6 +148,12 @@ void DBG_free(void *ptr) {
     free(ptr);
 }
 
+void DBG_free_verbose(void *ptr, const char *string) {
+    sLog("Freed %s", string);
+    delete_memory_info(ptr);
+    free(ptr);
+}
+
 bool DBG_DumpMemoryLeaks() {
     int count = 0;
     for(MemoryLeak *leak = array_start; leak != NULL; leak = leak->next) {
@@ -165,6 +180,7 @@ void PerformEndChecks() {
 #define sCalloc(num, size) DBG_calloc(num, size, __FILE__, __LINE__)
 #define sRealloc(ptr, size) DBG_realloc(ptr, size, __FILE__, __LINE__)
 #define sFree(ptr) DBG_free(ptr)
+//#define sFree(ptr) DBG_free_verbose(ptr, #ptr)
 
 #else // #if DEBUG
 
