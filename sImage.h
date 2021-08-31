@@ -418,7 +418,7 @@ internal void PNGDecode(PNG_DataStream *stream, u8 *out_ptr, u8 *dbg_end) {
         u8 btype = StreamReadBits(stream, 2);
         if(btype == 0) { // Uncompressed
             StreamFlushBits(stream);
-            // TODO
+            // @TODO
             //u32 len = *StreamRead(stream, u32);
             //u32 nlen = *StreamRead(stream, u32);
 
@@ -593,7 +593,7 @@ internal void PNGDefilter(PNG_Image *image, u8 *decompressed_image) {
             u32 b = 0;
 
             for(u32 i = 0; i < image->width; i++) {
-                //  TODO This is horrible
+                //  @TODO This is horrible
                 out_ptr[0] = in_ptr[0] + (((u8 *)&a)[0] + ((u8 *)&b)[0]) / 2;
                 out_ptr[1] = in_ptr[1] + (((u8 *)&a)[1] + ((u8 *)&b)[1]) / 2;
                 out_ptr[2] = in_ptr[2] + (((u8 *)&a)[2] + ((u8 *)&b)[2]) / 2;

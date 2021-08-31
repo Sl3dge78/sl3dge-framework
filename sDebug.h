@@ -34,8 +34,6 @@ global bool DBG_keep_console_open;
 
 #define KEEP_CONSOLE_OPEN(value) DBG_keep_console_open |= value
 
-#define DBG_END() PerformEndChecks()
-
 typedef struct MemoryInfo {
     void *ptr;
     size_t size;
@@ -48,8 +46,24 @@ typedef struct MemoryLeak {
     struct MemoryLeak *next;
 } MemoryLeak;
 
-global MemoryLeak *array_start = NULL;
-global MemoryLeak *array_end = NULL;
+typedef struct MemoryLeakList {
+    MemoryLeak *array_start;
+    MemoryLeak *array_end;
+} MemoryLeakList;
+
+global MemoryLeakList *list;
+
+void DEBUG_Begin() {
+    list = calloc(1, sizeof(MemoryLeakList));
+}
+
+void *DEBUG_GetLeakList() {
+    return list;
+}
+
+void DEBUG_SetLeakList(void *in_list) {
+    list = (MemoryLeakList *)in_list;
+}
 
 internal void add_memory_info(void *ptr, size_t size, const char *filename, u32 line) {
     MemoryLeak *leak = (MemoryLeak *)malloc(sizeof(MemoryLeak));
@@ -60,42 +74,42 @@ internal void add_memory_info(void *ptr, size_t size, const char *filename, u32 
     leak->info.line = line;
     leak->next = NULL;
 
-    if(array_start == NULL) {
-        array_start = leak;
-        array_end = leak;
+    if(list->array_start == NULL) {
+        list->array_start = leak;
+        list->array_end = leak;
     } else {
-        array_end->next = leak;
-        array_end = leak;
+        list->array_end->next = leak;
+        list->array_end = leak;
     }
 }
 
 internal void delete_memory_info(void *ptr) {
-    ASSERT_MSG(array_start, "Attempting to free a nullptr!");
+    ASSERT_MSG(list->array_start, "Attempting to free a nullptr!");
 
     // Si c'est le premier dans la liste
-    if(array_start->info.ptr == ptr) {
-        MemoryLeak *leak = array_start;
-        array_start = array_start->next;
+    if(list->array_start->info.ptr == ptr) {
+        MemoryLeak *leak = list->array_start;
+        list->array_start = list->array_start->next;
 
         free(leak);
         return;
     }
 
     // Sinon
-    for(MemoryLeak *leak = array_start; leak != NULL; leak = leak->next) {
+    for(MemoryLeak *leak = list->array_start; leak != NULL; leak = leak->next) {
         MemoryLeak *next_leak = leak->next;
         if(!next_leak) {
             // The ptr couldn't be found in the list of leaks. Multiple options
             // 1. We could have freed a nullptr. Hopefully the program will crash in that case
             // 2. DLL/Threads shinanigans, ie : when we reloaded a dll, this header was included, so a new list was created, so when we free the ptr, it doesn't exist in the list
-            ASSERT_MSG(next_leak, "Attempting to free a nullptr!");
+            sWarn("Attempting to free a nullptr!");
             return;
         }
 
         if(next_leak->info.ptr == ptr) { // Si il faut supprimer le suivant
-            if(array_end == next_leak) {
+            if(list->array_end == next_leak) {
                 leak->next = NULL;
-                array_end = leak;
+                list->array_end = leak;
             } else {
                 leak->next = next_leak->next;
             }
@@ -106,14 +120,16 @@ internal void delete_memory_info(void *ptr) {
 }
 
 internal void clear_array() {
-    MemoryLeak *leak = array_start;
-    MemoryLeak *to_delete = array_start;
+    MemoryLeak *leak = list->array_start;
+    MemoryLeak *to_delete = list->array_start;
 
     while(leak != NULL) {
         leak = leak->next;
         free(to_delete);
         to_delete = leak;
     }
+
+    free(list);
 }
 
 void *DBG_malloc(size_t size, const char *filename, u32 line) {
@@ -156,7 +172,7 @@ void DBG_free_verbose(void *ptr, const char *string) {
 
 bool DBG_DumpMemoryLeaks() {
     int count = 0;
-    for(MemoryLeak *leak = array_start; leak != NULL; leak = leak->next) {
+    for(MemoryLeak *leak = list->array_start; leak != NULL; leak = leak->next) {
         sError("Memory leak found - Address: %p | Size: %06d | Last alloc: %s:%d",
                leak->info.ptr,
                (u64)leak->info.size,
@@ -176,6 +192,10 @@ void PerformEndChecks() {
     }
 }
 
+void DEBUG_End() {
+    PerformEndChecks();
+}
+
 #define sMalloc(size) DBG_malloc(size, __FILE__, __LINE__)
 #define sCalloc(num, size) DBG_calloc(num, size, __FILE__, __LINE__)
 #define sRealloc(ptr, size) DBG_realloc(ptr, size, __FILE__, __LINE__)
@@ -189,12 +209,12 @@ void PerformEndChecks() {
 #define HANG(expression)
 #define HANG_MSG(expression, msg)
 #define KEEP_CONSOLE_OPEN(value)
-#define DBG_END()
+#define DEBUG_End()
 
-#define smalloc(size) malloc(size)
-#define scalloc(num, size) calloc(num, size)
-#define srealloc(ptr, size) realloc(ptr, size)
-#define sfree(ptr) free(ptr)
+#define sMalloc(size) malloc(size)
+#define sCalloc(num, size) calloc(num, size)
+#define sRealloc(ptr, size) realloc(ptr, size)
+#define sFree(ptr) free(ptr)
 
 #endif // #if DEBUG
 

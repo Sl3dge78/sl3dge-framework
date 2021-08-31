@@ -82,7 +82,7 @@ float vec3_dot(const Vec3 a, const Vec3 b);
 
 // Mat4
 void mat4_print(const Mat4 *mat);
-Mat4 mat4_mul(const Mat4 *a, const Mat4 *b);
+void mat4_mul(Mat4 *result, const Mat4 *a, const Mat4 *b);
 Mat4 mat4_identity();
 void mat4_transpose(Mat4 *mat);
 Mat4 mat4_perspective(const float fov,
@@ -109,7 +109,7 @@ Mat4 mat4_look_at(const Vec3 target, const Vec3 eye, const Vec3 up);
 void mat4_inverse(const Mat4 *m, Mat4 *out);
 Vec3 mat4_get_translation(const Mat4 *mat);
 Vec4 mat4_mul_vec4(const Mat4 *mat, const Vec4 vec);
-void mat4_scale(Mat4 *dst, const Vec3 s);
+void mat4_scaleby(Mat4 *dst, const Vec3 s);
 Mat4 trs_to_mat4(const Vec3 t, const Vec3 r, const Vec3 s);
 
 // Quaternion
@@ -276,18 +276,14 @@ void mat4_print(const Mat4 *const mat) {
          mat->v[15]);
 }
 
-Mat4 mat4_mul(const Mat4 *restrict const a, const Mat4 *restrict const b) {
-    Mat4 result = {0};
-
+void mat4_mul(Mat4 *result, const Mat4 *restrict const a, const Mat4 *restrict const b) {
     for(u32 i = 0; i < 4; i++) {
         for(u32 j = 0; j < 4; j++) {
             for(u32 k = 0; k < 4; k++) {
-                result.m[j][i] += (a->m[k][i] * b->m[j][k]);
+                result->m[j][i] += (a->m[k][i] * b->m[j][k]);
             }
         }
     }
-
-    return result;
 }
 
 Mat4 mat4_identity() {
@@ -536,7 +532,7 @@ void trs_quat_to_mat4(Mat4 *restrict dst, const Vec3 *t, const Quat *r, const Ve
     const float sqx = 2.0f * r->x * r->x;
     const float sqy = 2.0f * r->y * r->y;
     const float sqz = 2.0f * r->z * r->z;
-    //const float sqw = 2.0f * r->w * r->w; // TODO This is unused, error ?
+    //const float sqw = 2.0f * r->w * r->w; // @TODO This is unused, error ?
 
     const float xy = r->x * r->y;
     const float zw = r->z * r->w;
@@ -572,7 +568,7 @@ Mat4 trs_to_mat4(const Vec3 t, const Vec3 r, const Vec3 s) {
     Mat4 result = mat4_identity();
     mat4_translate(&result, t);
     mat4_rotate_euler(&result, r);
-    mat4_scale(&result, s);
+    mat4_scaleby(&result, s);
     return result;
 }
 
@@ -681,7 +677,7 @@ Vec3 mat4_mul_vec3(const Mat4 *const mat, const Vec3 vec) {
     return result;
 }
 
-void mat4_scale(Mat4 *restrict dst, const Vec3 s) {
+void mat4_scaleby(Mat4 *restrict dst, const Vec3 s) {
     dst->v[0] *= s.x;
     dst->v[1] *= s.x;
     dst->v[2] *= s.x;
@@ -699,7 +695,7 @@ void quat_to_mat4(Mat4 *dst, const Quat *q) {
     const float sqx = 2.0f * q->x * q->x;
     const float sqy = 2.0f * q->y * q->y;
     const float sqz = 2.0f * q->z * q->z;
-    //const float sqw = 2.0f * q->w * q->w; TODO This is unused error ?
+    //const float sqw = 2.0f * q->w * q->w; @TODO This is unused error ?
 
     const float xy = q->x * q->y;
     const float zw = q->z * q->w;
