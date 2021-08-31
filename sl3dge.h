@@ -1,7 +1,7 @@
 // use #define SL3DGE_IMPLEMENTATION
 // One in your code to define where the implementation goes
 
-#include "sDebug.h"
+#include "sLeak.h"
 #include "sImage.h"
 #include "sLogging.h"
 #include "sMath.h"

@@ -1,5 +1,29 @@
-#ifndef SDEBUG_H
-#define SDEBUG_H
+// SLEAK
+// Helper functions for debugging, mainly detecting memory leaks
+
+// --------
+// Usage
+
+// Include this file where you need, define the macro DEBUG, call DEBUG_Begin() at the start, and DEBUG_End() at the end of your program.
+// It will override malloc, calloc, realloc and free and give you a rundown of what wasn't freed. There's also an assert on freeing an unknown pointer
+// If your program has different contexts, (dynamic libraries for example), you can use DEBUG_GetLeakList() and DEBUG_SetLeakList(list) to link the contexts together
+
+#if 0
+
+#define DEBUG
+
+int main() {
+    DEBUG_Begin();
+    
+    // Do allocations
+    
+    DEBUG_End();
+}
+
+#endif
+
+#ifndef SLEAK_H
+#define SLEAK_H
 
 #include <stdio.h>
 
@@ -53,15 +77,15 @@ typedef struct MemoryLeakList {
 
 global MemoryLeakList *list;
 
-void DEBUG_Begin() {
+void Leak_Begin() {
     list = calloc(1, sizeof(MemoryLeakList));
 }
 
-void *DEBUG_GetLeakList() {
+void *Leak_GetList() {
     return list;
 }
 
-void DEBUG_SetLeakList(void *in_list) {
+void Leak_SetList(void *in_list) {
     list = (MemoryLeakList *)in_list;
 }
 
@@ -132,7 +156,7 @@ internal void clear_array() {
     free(list);
 }
 
-void *DBG_malloc(size_t size, const char *filename, u32 line) {
+void *_malloc(size_t size, const char *filename, u32 line) {
     void *ptr = malloc(size);
     if(ptr != NULL) {
         add_memory_info(ptr, size, filename, line);
@@ -140,7 +164,7 @@ void *DBG_malloc(size_t size, const char *filename, u32 line) {
     return ptr;
 }
 
-void *DBG_calloc(size_t num, size_t size, const char *filename, u32 line) {
+void *_calloc(size_t num, size_t size, const char *filename, u32 line) {
     void *ptr = calloc(num, size);
     if(ptr != NULL) {
         add_memory_info(ptr, num * size, filename, line);
@@ -148,7 +172,7 @@ void *DBG_calloc(size_t num, size_t size, const char *filename, u32 line) {
     return ptr;
 }
 
-void *DBG_realloc(void *ptr, size_t new_size, const char *filename, u32 line) {
+void *_realloc(void *ptr, size_t new_size, const char *filename, u32 line) {
     void *new_ptr = realloc(ptr, new_size);
     if(new_ptr != NULL) {
         if(ptr != NULL)
@@ -159,18 +183,18 @@ void *DBG_realloc(void *ptr, size_t new_size, const char *filename, u32 line) {
     return new_ptr;
 }
 
-void DBG_free(void *ptr) {
+void _free(void *ptr) {
     delete_memory_info(ptr);
     free(ptr);
 }
 
-void DBG_free_verbose(void *ptr, const char *string) {
+void _free_verbose(void *ptr, const char *string) {
     sLog("Freed %s", string);
     delete_memory_info(ptr);
     free(ptr);
 }
 
-bool DBG_DumpMemoryLeaks() {
+internal bool DumpMemoryLeaks() {
     int count = 0;
     for(MemoryLeak *leak = list->array_start; leak != NULL; leak = leak->next) {
         sError("Memory leak found - Address: %p | Size: %06d | Last alloc: %s:%d",
@@ -184,23 +208,19 @@ bool DBG_DumpMemoryLeaks() {
     return count;
 }
 
-void PerformEndChecks() {
-    DBG_keep_console_open |= DBG_DumpMemoryLeaks();
+void Leak_End() {
+    DBG_keep_console_open |= DumpMemoryLeaks();
 
     if(DBG_keep_console_open) {
         system("pause");
     }
 }
 
-void DEBUG_End() {
-    PerformEndChecks();
-}
-
-#define sMalloc(size) DBG_malloc(size, __FILE__, __LINE__)
-#define sCalloc(num, size) DBG_calloc(num, size, __FILE__, __LINE__)
-#define sRealloc(ptr, size) DBG_realloc(ptr, size, __FILE__, __LINE__)
-#define sFree(ptr) DBG_free(ptr)
-//#define sFree(ptr) DBG_free_verbose(ptr, #ptr)
+#define sMalloc(size) _malloc(size, __FILE__, __LINE__)
+#define sCalloc(num, size) _calloc(num, size, __FILE__, __LINE__)
+#define sRealloc(ptr, size) _realloc(ptr, size, __FILE__, __LINE__)
+#define sFree(ptr) _free(ptr)
+//#define sFree(ptr) _free_verbose(ptr, #ptr)
 
 #else // #if DEBUG
 
@@ -209,7 +229,10 @@ void DEBUG_End() {
 #define HANG(expression)
 #define HANG_MSG(expression, msg)
 #define KEEP_CONSOLE_OPEN(value)
-#define DEBUG_End()
+#define Leak_Begin()
+#define Leak_End()
+#define Leak_GetList() 0
+#define Leak_SetList(arg)
 
 #define sMalloc(size) malloc(size)
 #define sCalloc(num, size) calloc(num, size)
