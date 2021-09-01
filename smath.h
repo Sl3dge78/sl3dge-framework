@@ -277,6 +277,8 @@ void mat4_print(const Mat4 *const mat) {
 }
 
 void mat4_mul(Mat4 *result, const Mat4 *restrict const a, const Mat4 *restrict const b) {
+    *result = (Mat4){0};
+
     for(u32 i = 0; i < 4; i++) {
         for(u32 j = 0; j < 4; j++) {
             for(u32 k = 0; k < 4; k++) {
