@@ -9,16 +9,12 @@
 #define PI 3.1415926535897932384626433f
 #define MAX(x, y) x > y ? x : y
 
-#ifdef SDL_h_
-typedef SDL_Rect Rect;
-#else
 typedef struct Rect {
     i32 x;
     i32 y;
     i32 w;
     i32 h;
 } Rect;
-#endif
 
 typedef struct Vec2f {
     alignas(4) f32 x;
@@ -51,7 +47,7 @@ typedef union Mat4 {
     f32 v[16];
     f32 m[4][4];
 } Mat4;
-
+/*
 u32 aligned_size(const u32 value, const u32 alignment);
 static inline f32 radians(const f32 angle);
 u32 swap_u32(const u32 val);
@@ -97,7 +93,7 @@ Mat4 mat4_ortho(const float t,
                 const float zfar);
 Mat4 mat4_ortho_zoom(float ratio, float zoom, float n, float f);
 Mat4 mat4_ortho_zoom_gl(float ratio, float zoom, float n, float f);
-inline void mat4_translate(Mat4 *mat, const Vec3 vec);
+inline void mat4_translateby(Mat4 *mat, const Vec3 vec);
 inline void mat4_set_position(Mat4 *mat, const Vec3 vec);
 void mat4_rotation_x(Mat4 *mat, const float radians);
 void mat4_rotation_y(Mat4 *mat, const float radians);
@@ -113,6 +109,7 @@ Mat4 trs_to_mat4(const Vec3 t, const Vec3 r, const Vec3 s);
 
 // Quaternion
 void quat_to_mat4(Mat4 *dst, const Quat *q);
+*/
 
 u32 aligned_size(const u32 value, const u32 alignment) {
     return (value + alignment - 1) & ~(alignment - 1);
@@ -432,7 +429,7 @@ Mat4 mat4_ortho_zoom_gl(float ratio, float zoom, float n, float f) {
     return result;
 }
 
-inline void mat4_translate(Mat4 *mat, const Vec3 vec) {
+inline void mat4_translateby(Mat4 *mat, const Vec3 vec) {
     mat->m[3][0] += vec.x;
     mat->m[3][1] += vec.y;
     mat->m[3][2] += vec.z;
@@ -563,9 +560,21 @@ void trs_quat_to_mat4(Mat4 *restrict dst, const Vec3 *t, const Quat *r, const Ve
     dst->v[15] = 1.0f;
 }
 
+void mat4_scaleby(Mat4 *restrict dst, const Vec3 s) {
+    dst->v[0] *= s.x;
+    dst->v[1] *= s.x;
+    dst->v[2] *= s.x;
+    dst->v[4] *= s.y;
+    dst->v[5] *= s.y;
+    dst->v[6] *= s.y;
+    dst->v[8] *= s.z;
+    dst->v[9] *= s.z;
+    dst->v[10] *= s.z;
+}
+
 Mat4 trs_to_mat4(const Vec3 t, const Vec3 r, const Vec3 s) {
     Mat4 result = mat4_identity();
-    mat4_translate(&result, t);
+    mat4_translateby(&result, t);
     mat4_rotate_euler(&result, r);
     mat4_scaleby(&result, s);
     return result;
@@ -684,18 +693,6 @@ Vec3 mat4_mul_vec3(const Mat4 *const mat, const Vec3 vec) {
     result.y = vec.x * mat->v[1] + vec.y * mat->v[5] + vec.z * mat->v[9] + mat->v[13];
     result.z = vec.x * mat->v[2] + vec.y * mat->v[6] + vec.z * mat->v[10] + mat->v[14];
     return result;
-}
-
-void mat4_scaleby(Mat4 *restrict dst, const Vec3 s) {
-    dst->v[0] *= s.x;
-    dst->v[1] *= s.x;
-    dst->v[2] *= s.x;
-    dst->v[4] *= s.y;
-    dst->v[5] *= s.y;
-    dst->v[6] *= s.y;
-    dst->v[8] *= s.z;
-    dst->v[9] *= s.z;
-    dst->v[10] *= s.z;
 }
 
 // =====================================================

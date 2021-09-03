@@ -1,5 +1,17 @@
 #pragma once
 
+/*
+Very barebones PNG reader. It might crash if something isn't supported.
+API should be pretty self explanatory :
+
+PNG_Image *sLoadImage(const char *path);
+void sDestroyImage(PNG_Image *image);
+
+bool sQueryImageSize(const char *path, u32 *w, u32 *h);
+bool sLoadImageTo(const char *path, void *dst);
+
+*/
+
 #include <stdio.h>
 #include <string.h>
 
@@ -69,11 +81,6 @@ typedef struct {
     u8 flevel;
 
 } PNG_IDAT;
-
-PNG_Image *sLoadImage(const char *path);
-bool sQueryImageSize(const char *path, u32 *w, u32 *h);
-bool sLoadImageTo(const char *path, void *dst);
-void sDestroyImage(PNG_Image *image);
 
 const u32 FIXED_LENGTH_TABLE[] = {3,  4,  5,  6,  7,  8,  9,  10, 11,  13,  15,  17,  19,  23, 27,
                                   31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258};

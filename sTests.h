@@ -6,13 +6,24 @@
 #define TEST_EQUALS(v1, v2, fmt)                                                                   \
     {                                                                                              \
         if(v1 == v2) {                                                                             \
-            TestSuccess(__FILE__, __LINE__);                                                       \
             sLogSetColor(LOG_COLOR_GREEN);                                                         \
+            TestSuccess(__FILE__, __LINE__);                                                       \
             sLogOutputLine(0, fmt " == " fmt, v1, v2);                                             \
         } else {                                                                                   \
-            TestFailure(__FILE__, __LINE__);                                                       \
             sLogSetColor(LOG_COLOR_RED);                                                           \
+            TestFailure(__FILE__, __LINE__);                                                       \
             sLogOutputLine(0, fmt " != " fmt, v1, v2);                                             \
+        }                                                                                          \
+    }
+
+#define TEST_BOOL(v)                                                                               \
+    {                                                                                              \
+        if(v) {                                                                                    \
+            sLogSetColor(LOG_COLOR_GREEN);                                                         \
+            TestSuccess(__FILE__, __LINE__);                                                       \
+        } else {                                                                                   \
+            sLogSetColor(LOG_COLOR_RED);                                                           \
+            TestFailure(__FILE__, __LINE__);                                                       \
         }                                                                                          \
     }
 
@@ -35,7 +46,6 @@ global TestState state;
 void TEST_BEGIN() {
     state = (TestState){0};
     sLog("TEST BEGIN");
-    sLog("GOT -- EXPECTED");
 }
 
 void TEST_END() {
@@ -49,7 +59,7 @@ void TEST_END() {
 }
 
 internal void TestSuccess(const char *file, const u32 line) {
-    sTrace("OK  : %s:%d", file, line);
+    sLog("OK  : %s:%d", file, line);
     state.test_count++;
     state.test_ok++;
 }
