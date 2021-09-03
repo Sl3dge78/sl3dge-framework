@@ -1,5 +1,4 @@
-#ifndef SMODULE_H
-#define SMODULE_H
+#pragma once
 
 #ifdef __WIN32__
 #include <windows.h>
@@ -108,4 +107,3 @@ internal void Win32CloseModule(Module *module) {
     FreeLibrary(module->dll);
 }
 #endif
-#endif // SL_MODULE_H

@@ -1,3 +1,4 @@
+#pragma once
 // SLEAK
 // Helper functions for debugging, mainly detecting memory leaks
 
@@ -13,24 +14,22 @@
 #define DEBUG
 
 int main() {
-    DEBUG_Begin();
+    Leak_Begin();
     
     // Do allocations
     
-    DEBUG_End();
+    Leak_End();
 }
 
 #endif
-
-#ifndef SLEAK_H
-#define SLEAK_H
-
-#include <stdio.h>
 
 #include "sTypes.h"
 #include "sLogging.h"
 
 #if defined(DEBUG)
+
+#include <stdio.h>
+#include <stdlib.h>
 
 #define ASSERT(expression)                                                                         \
     if(!(expression)) {                                                                            \
@@ -240,5 +239,3 @@ void Leak_End() {
 #define sFree(ptr) free(ptr)
 
 #endif // #if DEBUG
-
-#endif // #ifdef SL_DEBUG_H

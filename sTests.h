@@ -1,5 +1,4 @@
-#ifndef STESTS_H
-#define STESTS_H
+#pragma once
 
 #include "sTypes.h"
 #include "sLogging.h"
@@ -60,5 +59,3 @@ internal void TestFailure(const char *file, const u32 line) {
     state.test_count++;
     state.test_nok++;
 }
-
-#endif

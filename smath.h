@@ -1,5 +1,4 @@
-#ifndef SMATH_H
-#define SMATH_H
+#pragma once
 
 #include <math.h>
 #include <stdalign.h>
@@ -114,8 +113,6 @@ Mat4 trs_to_mat4(const Vec3 t, const Vec3 r, const Vec3 s);
 
 // Quaternion
 void quat_to_mat4(Mat4 *dst, const Quat *q);
-
-#if defined(SL3DGE_IMPLEMENTATION) || defined(__INTELLISENSE__)
 
 u32 aligned_size(const u32 value, const u32 alignment) {
     return (value + alignment - 1) & ~(alignment - 1);
@@ -661,6 +658,16 @@ Vec3 mat4_get_translation(const Mat4 *mat) {
     return result;
 }
 
+Vec3 mat4_get_scale(const Mat4 *mat) {
+    // To get the scale we need the length of the vectors of the first three lines.
+    // @Optimize
+    Vec3 x = *(Vec3 *)&mat->v[0];
+    Vec3 y = *(Vec3 *)&mat->v[4];
+    Vec3 z = *(Vec3 *)&mat->v[8];
+
+    return (Vec3){vec3_length(x), vec3_length(y), vec3_length(z)};
+}
+
 Vec4 mat4_mul_vec4(const Mat4 *restrict const mat, const Vec4 vec) {
     Vec4 result = {0};
     result.x = vec.x * mat->v[0] + vec.y * mat->v[1] + vec.z * mat->v[2] + vec.w * mat->v[3];
@@ -730,6 +737,3 @@ void quat_to_mat4(Mat4 *dst, const Quat *q) {
     dst->v[14] = 0.0f;
     dst->v[15] = 1.0f;
 }
-
-#endif // SLEDGE_IMPLEMENTATION
-#endif // SL_MATH_H

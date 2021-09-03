@@ -1,8 +1,10 @@
-#ifndef SIMAGE_H
-#define SIMAGE_H
+#pragma once
 
 #include <stdio.h>
 #include <string.h>
+
+#include "sTypes.h"
+#include "sMath.h"
 
 typedef struct {
     u32 width;
@@ -12,15 +14,6 @@ typedef struct {
     u32 size;
 
 } PNG_Image;
-
-PNG_Image *sLoadImage(const char *path);
-bool sQueryImageSize(const char *path, u32 *w, u32 *h);
-bool sLoadImageTo(const char *path, void *dst);
-void sDestroyImage(PNG_Image *image);
-
-#if defined(SL3DGE_IMPLEMENTATION) || defined(__INTELLISENSE__)
-
-#include "sl3dge.h"
 
 typedef enum {
     PNG_UNKNOWN = 0,
@@ -76,6 +69,11 @@ typedef struct {
     u8 flevel;
 
 } PNG_IDAT;
+
+PNG_Image *sLoadImage(const char *path);
+bool sQueryImageSize(const char *path, u32 *w, u32 *h);
+bool sLoadImageTo(const char *path, void *dst);
+void sDestroyImage(PNG_Image *image);
 
 const u32 FIXED_LENGTH_TABLE[] = {3,  4,  5,  6,  7,  8,  9,  10, 11,  13,  15,  17,  19,  23, 27,
                                   31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258};
@@ -790,5 +788,3 @@ void sDestroyImage(PNG_Image *image) {
     sFree(image->pixels);
     sFree(image);
 }
-#endif //#if defined(SL3DGE_IMPLEMENTATION) || defined(__INTELLISENSE__)
-#endif

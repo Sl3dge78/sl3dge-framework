@@ -1,5 +1,4 @@
-// use #define SL3DGE_IMPLEMENTATION
-// One in your code to define where the implementation goes
+#pragma once
 
 #include "sLeak.h"
 #include "sImage.h"
@@ -10,7 +9,3 @@
 #include "sString.h"
 #include "sTests.h"
 #include "sTypes.h"
-
-#ifdef SL3DGE_IMPLEMENTATION
-#undef SL3DGE_IMPLEMENTATION
-#endif

@@ -1,5 +1,4 @@
-#ifndef SPERF_H
-#define SPERF_H
+#pragma once
 
 #include "sTypes.h"
 #include "sLogging.h"
@@ -83,5 +82,4 @@ void sDumpPerf_() {
 
 #else
 
-#endif
 #endif

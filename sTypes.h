@@ -1,8 +1,6 @@
-#ifndef STYPES_H
-#define STYPES_H
+#pragma once
 
 #include <stdint.h>
-#include <stdlib.h>
 
 #ifdef __cplusplus
 #define DLL_EXPORT extern "C" __declspec(dllexport)
@@ -26,5 +24,3 @@ typedef float f32;
 typedef double f64;
 
 #define ARRAY_SIZE(array) sizeof(array) / sizeof(array[0])
-
-#endif // COMMON_H
