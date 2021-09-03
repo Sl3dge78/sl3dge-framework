@@ -670,19 +670,19 @@ Vec3 mat4_get_scale(const Mat4 *mat) {
 
 Vec4 mat4_mul_vec4(const Mat4 *restrict const mat, const Vec4 vec) {
     Vec4 result = {0};
-    result.x = vec.x * mat->v[0] + vec.y * mat->v[1] + vec.z * mat->v[2] + vec.w * mat->v[3];
-    result.y = vec.x * mat->v[4] + vec.y * mat->v[5] + vec.z * mat->v[6] + vec.w * mat->v[7];
-    result.z = vec.x * mat->v[8] + vec.y * mat->v[9] + vec.z * mat->v[10] + vec.w * mat->v[11];
-    result.w = vec.x * mat->v[12] + vec.y * mat->v[13] + vec.z * mat->v[14] + vec.w * mat->v[15];
+    result.x = vec.x * mat->v[0] + vec.y * mat->v[4] + vec.z * mat->v[8] + vec.w * mat->v[12];
+    result.y = vec.x * mat->v[1] + vec.y * mat->v[5] + vec.z * mat->v[9] + vec.w * mat->v[13];
+    result.z = vec.x * mat->v[2] + vec.y * mat->v[6] + vec.z * mat->v[10] + vec.w * mat->v[14];
+    result.w = vec.x * mat->v[3] + vec.y * mat->v[7] + vec.z * mat->v[11] + vec.w * mat->v[15];
     return result;
 }
 
-// This assumes that w == 0
+// This assumes that w == 1
 Vec3 mat4_mul_vec3(const Mat4 *const mat, const Vec3 vec) {
     Vec3 result = {0};
-    result.x = vec.x * mat->v[0] + vec.y * mat->v[1] + vec.z * mat->v[2];
-    result.y = vec.x * mat->v[4] + vec.y * mat->v[5] + vec.z * mat->v[6];
-    result.z = vec.x * mat->v[8] + vec.y * mat->v[9] + vec.z * mat->v[10];
+    result.x = vec.x * mat->v[0] + vec.y * mat->v[4] + vec.z * mat->v[8] + mat->v[12];
+    result.y = vec.x * mat->v[1] + vec.y * mat->v[5] + vec.z * mat->v[9] + mat->v[13];
+    result.z = vec.x * mat->v[2] + vec.y * mat->v[6] + vec.z * mat->v[10] + mat->v[14];
     return result;
 }
 
