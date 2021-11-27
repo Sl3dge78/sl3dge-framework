@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sTypes.h"
 #include "sLeak.h"
 #include "sImage.h"
 #include "sLogging.h"
@@ -8,4 +9,4 @@
 #include "sPerf.h"
 #include "sString.h"
 #include "sTests.h"
-#include "sTypes.h"
+#include "sArray.h"
