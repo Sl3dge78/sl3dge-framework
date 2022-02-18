@@ -1,3 +1,4 @@
 bin/*.exe
 tmp/*.pdb
 *.png
+*.swp

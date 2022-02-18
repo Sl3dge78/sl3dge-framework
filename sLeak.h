@@ -5,20 +5,21 @@
 // --------
 // Usage
 
-// Include this file where you need, define the macro DEBUG, call DEBUG_Begin() at the start, and DEBUG_End() at the end of your program.
-// It will override malloc, calloc, realloc and free and give you a rundown of what wasn't freed. There's also an assert on freeing an unknown pointer
+// Include this file where you need, define the macro _DEBUG, call sLeak_Begin() at the start, and sLeak_End() at the end of your program.
+// Use sMalloc, sCalloc, sRealloc and sFree. You can also make the header override malloc, calloc, realloc and free by defining SLEAK_OVERRIDE before including the file.
+// Upon calling sLeak_End() a rundown of possible unfreed pointers will be given and program execution will be paused. There's also an assert on freeing an unknown pointer
 // If your program has different contexts, (dynamic libraries for example), you can use DEBUG_GetLeakList() and DEBUG_SetLeakList(list) to link the contexts together
 
 #if 0
 
-#define DEBUG
+#define _DEBUG
 
 int main() {
-    Leak_Begin();
+    sLeak_Begin();
     
     // Do allocations
     
-    Leak_End();
+    sLeak_End();
 }
 
 #endif
@@ -26,7 +27,7 @@ int main() {
 #include "sTypes.h"
 #include "sLogging.h"
 
-#if defined(DEBUG)
+#if defined(_DEBUG)
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -76,15 +77,15 @@ typedef struct MemoryLeakList {
 
 global MemoryLeakList *list;
 
-void Leak_Begin() {
+void sLeak_Begin() {
     list = calloc(1, sizeof(MemoryLeakList));
 }
 
-void *Leak_GetList() {
+void *sLeak_GetList() {
     return list;
 }
 
-void Leak_SetList(void *in_list) {
+void sLeak_SetList(void *in_list) {
     list = (MemoryLeakList *)in_list;
 }
 
@@ -210,7 +211,7 @@ internal bool DumpMemoryLeaks() {
     return count;
 }
 
-void Leak_End() {
+void sLeak_End() {
     DBG_keep_console_open |= DumpMemoryLeaks();
     
     if(DBG_keep_console_open) {
@@ -224,17 +225,26 @@ void Leak_End() {
 #define sFree(ptr) _free(ptr)
 //#define sFree(ptr) _free_verbose(ptr, #ptr)
 
-#else // #if DEBUG
+#if defined(SLEAK_OVERRIDE)
+
+#define malloc sMalloc
+#define calloc sCalloc
+#define realloc sRealloc
+#define free sFree
+
+#endif
+
+#else // #if _DEBUG
 
 #define ASSERT(expression)
 #define ASSERT_MSG(expression, msg)
 #define HANG(expression)
 #define HANG_MSG(expression, msg)
 #define KEEP_CONSOLE_OPEN(value)
-#define Leak_Begin()
-#define Leak_End()
-#define Leak_GetList() 0
-#define Leak_SetList(arg)
+#define sLeak_Begin()
+#define sLeak_End()
+#define sLeak_GetList() 0
+#define sLeak_SetList(arg)
 
 #define sMalloc(size) malloc(size)
 #define sCalloc(num, size) calloc(num, size)
